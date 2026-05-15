@@ -1,0 +1,349 @@
+Redesign the CoinAstra mobile homepage into a world-class AI crypto intelligence super app homepage.
+
+The current mobile homepage is too empty and lacks depth, information density, AI intelligence, and professional trading features.
+
+The new mobile homepage must feel like:
+- Bloomberg Terminal Mobile
+- TradingView Pro
+- Arkham Intelligence
+- Binance Pro
+- CoinMarketCap Premium
+- Nansen AI
+combined into one futuristic crypto AI operating system.
+
+━━━━━━━━━━━━━━━━━━━
+MOBILE HOME PAGE STRUCTURE
+━━━━━━━━━━━━━━━━━━━
+
+Create a highly advanced layered homepage with professional sections stacked vertically.
+
+The homepage should feel alive, intelligent, data-rich, and interactive.
+
+━━━━━━━━━━━━━━━━━━━
+1. PREMIUM TOP HEADER
+━━━━━━━━━━━━━━━━━━━
+
+Top sticky header should include:
+
+LEFT:
+- CoinAstra animated logo
+
+CENTER:
+- Global market status
+- BTC dominance
+- Fear & Greed score
+- Live market sentiment
+
+RIGHT:
+- Search button
+- Notification center
+- User profile
+- Theme switcher
+
+Features:
+- Glassmorphism background
+- Sticky on scroll
+- Blur effects
+- Animated live ticker
+
+━━━━━━━━━━━━━━━━━━━
+2. LIVE GLOBAL MARKET BAR
+━━━━━━━━━━━━━━━━━━━
+
+Horizontal scrolling market ribbon:
+- BTC
+- ETH
+- SOL
+- TOTAL MARKET CAP
+- TOTAL VOLUME
+- TRENDING NARRATIVE
+- MEME INDEX
+- AI MARKET SCORE
+
+Show:
+- live prices
+- percentage changes
+- mini sparkline charts
+
+━━━━━━━━━━━━━━━━━━━
+3. HERO AI COMMAND CENTER
+━━━━━━━━━━━━━━━━━━━
+
+Create a powerful AI dashboard card.
+
+Include:
+- Overall AI market sentiment
+- Buy/Sell market bias
+- AI confidence percentage
+- Smart money activity
+- Whale accumulation score
+- Market momentum
+- AI narrative strength
+
+Visuals:
+- Circular AI gauges
+- Animated progress bars
+- Glowing indicators
+- Gradient AI card
+
+Buttons:
+- Open AI Terminal
+- View Predictions
+- AI Opportunities
+
+━━━━━━━━━━━━━━━━━━━
+4. MAIN TRADING CHART
+━━━━━━━━━━━━━━━━━━━
+
+Large responsive TradingView chart section.
+
+Features:
+- Candlestick chart
+- Fullscreen
+- Indicators
+- Drawing tools
+- Timeframes
+- Volume
+- AI overlay signals
+- Trend detection
+
+Under chart:
+- Buy/Sell buttons
+- Quick trade setup
+- AI confidence
+
+━━━━━━━━━━━━━━━━━━━
+5. TOP AI OPPORTUNITIES
+━━━━━━━━━━━━━━━━━━━
+
+Scrollable AI-generated opportunities section.
+
+Each card includes:
+- Coin logo
+- Potential gain %
+- AI confidence
+- Risk level
+- Smart money activity
+- Narrative category
+- Momentum score
+
+Badges:
+- EARLY GEM
+- BREAKOUT
+- WHALE BUYING
+- TRENDING
+- AI SIGNAL
+
+━━━━━━━━━━━━━━━━━━━
+6. TRENDING NARRATIVES
+━━━━━━━━━━━━━━━━━━━
+
+Display sectors:
+- AI Coins
+- Meme Coins
+- DePIN
+- Gaming
+- Layer 2
+- RWA
+- DeFi
+- Solana Ecosystem
+
+Each narrative card includes:
+- Strength score
+- Volume inflow
+- Market attention
+- Top coins in narrative
+
+━━━━━━━━━━━━━━━━━━━
+7. AI MARKET HEATMAP
+━━━━━━━━━━━━━━━━━━━
+
+Interactive crypto heatmap.
+
+Show:
+- sector flows
+- gainers/losers
+- market rotation
+- liquidity movement
+- whale concentration
+
+━━━━━━━━━━━━━━━━━━━
+8. WHALE TRACKER LIVE
+━━━━━━━━━━━━━━━━━━━
+
+Real-time whale feed:
+- Wallet buys
+- Exchange inflows
+- Smart money accumulation
+- Large transfers
+- Insider movement
+
+Show:
+- amount
+- coin
+- wallet type
+- timestamp
+- transaction value
+
+━━━━━━━━━━━━━━━━━━━
+9. TOP GAINERS / LOSERS
+━━━━━━━━━━━━━━━━━━━
+
+Professional market movers section.
+
+Display:
+- Top gainers
+- Top losers
+- Trending
+- Most volume
+- Most watched
+
+Each card:
+- live price
+- mini chart
+- AI score
+- momentum
+
+━━━━━━━━━━━━━━━━━━━
+10. FEAR & GREED PANEL
+━━━━━━━━━━━━━━━━━━━
+
+Advanced sentiment gauge:
+- Current market emotion
+- Historical sentiment
+- AI interpretation
+- Risk warning
+- Opportunity rating
+
+━━━━━━━━━━━━━━━━━━━
+11. AI NEWS & SENTIMENT
+━━━━━━━━━━━━━━━━━━━
+
+Live crypto news feed.
+
+Features:
+- AI summarized news
+- Bullish/Bearish impact
+- Narrative tagging
+- Social sentiment
+- X/Twitter sentiment
+- Reddit sentiment
+
+━━━━━━━━━━━━━━━━━━━
+12. WATCHLIST QUICK ACCESS
+━━━━━━━━━━━━━━━━━━━
+
+User watchlist preview:
+- favorite coins
+- alerts
+- price changes
+- AI changes
+
+━━━━━━━━━━━━━━━━━━━
+13. PORTFOLIO SNAPSHOT
+━━━━━━━━━━━━━━━━━━━
+
+Mini portfolio dashboard:
+- balance
+- pnl
+- allocation
+- best/worst asset
+- AI portfolio health
+
+━━━━━━━━━━━━━━━━━━━
+14. AI ALERTS CENTER
+━━━━━━━━━━━━━━━━━━━
+
+Real-time alerts:
+- whale movement
+- AI breakout
+- trend reversal
+- volume spikes
+- smart money alerts
+
+━━━━━━━━━━━━━━━━━━━
+15. MEME COIN RADAR
+━━━━━━━━━━━━━━━━━━━
+
+Dedicated meme section:
+- trending memes
+- social spikes
+- AI meme score
+- risk meter
+- volume growth
+
+━━━━━━━━━━━━━━━━━━━
+16. ON-CHAIN ACTIVITY
+━━━━━━━━━━━━━━━━━━━
+
+Show:
+- active wallets
+- TVL
+- chain activity
+- gas tracker
+- DEX volume
+- bridge activity
+
+━━━━━━━━━━━━━━━━━━━
+17. MOBILE BOTTOM NAVIGATION
+━━━━━━━━━━━━━━━━━━━
+
+Professional floating navigation bar.
+
+Tabs:
+- Home
+- Markets
+- AI
+- Watchlist
+- Portfolio
+- Alerts
+- Profile
+
+Features:
+- animated active state
+- glassmorphism
+- neon glow
+- haptic-style interaction
+
+━━━━━━━━━━━━━━━━━━━
+18. UI/UX QUALITY
+━━━━━━━━━━━━━━━━━━━
+
+Add:
+- smooth animations
+- skeleton loading
+- floating effects
+- swipe gestures
+- expandable cards
+- snap scrolling
+- premium transitions
+- live updating widgets
+
+━━━━━━━━━━━━━━━━━━━
+19. DESIGN QUALITY
+━━━━━━━━━━━━━━━━━━━
+
+Must support:
+- Dark mode
+- Light mode
+
+Dark:
+- futuristic crypto terminal
+
+Light:
+- premium Bloomberg finance style
+
+━━━━━━━━━━━━━━━━━━━
+20. FINAL EXPERIENCE
+━━━━━━━━━━━━━━━━━━━
+
+The CoinAstra mobile homepage must feel like:
+“An AI-powered crypto operating system”
+instead of a simple crypto tracker.
+
+The homepage should immediately impress investors, traders, and users with:
+- information depth
+- AI intelligence
+- premium visual quality
+- real-time market power
+- professional financial dashboard experience.

@@ -1,0 +1,275 @@
+Build a professional Coin Detail Page system for CoinAstra.
+
+When a user clicks any cryptocurrency anywhere on the platform:
+
+* from Markets
+* Watchlist
+* Trending
+* AI Signals
+* Portfolio
+* Heatmaps
+* Search
+* Top Gainers
+* Meme Radar
+* Narratives
+
+the platform must open a dedicated advanced Coin Detail Page.
+
+━━━━━━━━━━━━━━━━━━━
+COIN DETAIL PAGE STRUCTURE
+━━━━━━━━━━━━━━━━━━━
+
+TOP SECTION:
+Create a sticky top section containing:
+
+LEFT:
+
+* Coin logo
+* Coin name
+* Coin symbol
+* Rank
+* Blockchain network
+* Verified badge if applicable
+
+CENTER:
+
+* Live price
+* 24h price change
+* Market cap
+* FDV
+* Volume
+* Circulating supply
+* Total supply
+* Max supply
+
+RIGHT:
+
+* Add to Watchlist button
+* Share button
+* AI Analyze button
+* Buy/Sell quick actions
+
+━━━━━━━━━━━━━━━━━━━
+TOP SEARCH & QUICK COIN NAVIGATION
+━━━━━━━━━━━━━━━━━━━
+
+At the very top create:
+
+* Small responsive search bar
+* Quick coin switcher
+* Horizontal scrolling top coins list
+
+Show:
+
+* BTC
+* ETH
+* SOL
+* XRP
+* BNB
+* DOGE
+* Trending coins
+* Recently viewed
+
+Users should instantly switch between coins without leaving the page.
+
+━━━━━━━━━━━━━━━━━━━
+CATEGORY NAVIGATION
+━━━━━━━━━━━━━━━━━━━
+
+Add category tabs below the search.
+
+Categories:
+
+* All
+* AI Coins
+* Meme Coins
+* DeFi
+* Layer 1
+* Layer 2
+* Gaming
+* RWA
+* DePIN
+* Solana Ecosystem
+* Ethereum Ecosystem
+* Stablecoins
+* Exchange Tokens
+* Trending
+* New Listings
+
+Clicking category filters the coin list dynamically.
+
+━━━━━━━━━━━━━━━━━━━
+MAIN CHART SECTION
+━━━━━━━━━━━━━━━━━━━
+
+Large professional TradingView-style chart.
+
+Features:
+
+* Candlestick chart
+* Line chart
+* Volume
+* RSI
+* MACD
+* EMA
+* Bollinger Bands
+* Timeframes:
+
+  * 1H
+  * 4H
+  * 1D
+  * 1W
+  * 1M
+  * ALL
+
+Add:
+
+* Fullscreen mode
+* Drawing tools
+* AI signals overlay
+* Support/resistance zones
+* Trend detection
+
+━━━━━━━━━━━━━━━━━━━
+AI ANALYSIS PANEL
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+
+* AI sentiment
+* Bullish/Bearish probability
+* AI confidence score
+* Momentum analysis
+* Narrative strength
+* Smart money activity
+* Whale accumulation
+* Volatility score
+* Risk score
+* AI-generated summary
+
+━━━━━━━━━━━━━━━━━━━
+TOKEN INFORMATION SECTION
+━━━━━━━━━━━━━━━━━━━
+
+Show maximum detailed coin information:
+
+* Project description
+* Utility
+* Blockchain
+* Launch date
+* Consensus mechanism
+* Founder/team
+* Website
+* Whitepaper
+* Social links
+* GitHub
+* Official explorers
+* Tokenomics
+* Vesting schedule
+* Unlock events
+* Inflation rate
+* Emission model
+
+━━━━━━━━━━━━━━━━━━━
+MARKET DATA SECTION
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+
+* Market cap
+* Fully diluted valuation
+* Liquidity
+* Volume
+* Trading pairs
+* Exchange listings
+* ATH/ATL
+* Historical performance
+* Volatility
+* Correlation data
+
+━━━━━━━━━━━━━━━━━━━
+ON-CHAIN ANALYTICS
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+
+* Holder count
+* Active wallets
+* Whale wallets
+* Exchange inflows/outflows
+* Smart money flow
+* Transaction volume
+* Staking metrics
+* TVL
+* DEX activity
+
+━━━━━━━━━━━━━━━━━━━
+SOCIAL & SENTIMENT
+━━━━━━━━━━━━━━━━━━━
+
+Show:
+
+* X/Twitter sentiment
+* Reddit activity
+* Telegram activity
+* Community growth
+* Influencer mentions
+* News sentiment
+* Social engagement score
+
+━━━━━━━━━━━━━━━━━━━
+RELATED COINS SECTION
+━━━━━━━━━━━━━━━━━━━
+
+Show similar projects based on:
+
+* Category
+* Narrative
+* Chain
+* AI analysis
+* Market behavior
+
+━━━━━━━━━━━━━━━━━━━
+NEWS SECTION
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+
+* Latest coin news
+* AI summarized news
+* Bullish/Bearish impact
+* News sentiment score
+* Market impact analysis
+
+━━━━━━━━━━━━━━━━━━━
+MOBILE & DESKTOP
+━━━━━━━━━━━━━━━━━━━
+
+The page must work perfectly on:
+
+* Desktop
+* Tablet
+* Mobile
+
+Desktop:
+
+* multi-column analytics terminal
+
+Mobile:
+
+* stacked responsive layout
+* swipe sections
+* floating navigation
+
+━━━━━━━━━━━━━━━━━━━
+FINAL GOAL
+━━━━━━━━━━━━━━━━━━━
+
+Coin detail pages should feel more advanced than:
+
+* CoinMarketCap
+* CoinGecko
+* TradingView
+* DexScreener
+
+and function as professional AI-powered crypto intelligence terminals.

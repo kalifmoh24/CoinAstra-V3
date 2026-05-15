@@ -1,0 +1,80 @@
+You are building CoinAstra.io — a premium AI-powered crypto intelligence platform inspired by TradingView, Arkham, CoinMarketCap Pro, and institutional trading terminals.
+
+Tech stack:
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Framer Motion
+- Responsive mobile-first design
+- Dark and light themes
+- Professional production-quality UI
+
+Design requirements:
+- Extremely modern
+- Institutional trading dashboard quality
+- Glassmorphism cards
+- Neon gradients
+- Smooth animations
+- Mobile-first responsive layout
+- Desktop and tablet optimized
+- Realtime feeling UI
+- Apple + Bloomberg + TradingView inspired UX
+
+Main platform sections:
+1. Home Dashboard
+2. Markets
+3. AI Intelligence
+4. Watchlist
+5. Portfolio
+6. Alerts
+7. News & Sentiment
+8. Whale Tracker
+9. On-Chain Analytics
+10. Meme Radar
+11. Trending Narratives
+12. Fear & Greed Index
+13. AI Trade Signals
+14. Screeners
+15. Profile & Settings
+
+Important:
+- Every navigation button must open a real page
+- Every page must have advanced UI and detailed widgets
+- Use reusable components
+- Use clean scalable folder structure
+- Add mock realtime crypto data everywhere
+- Add loading skeletons
+- Add hover animations
+- Add mobile bottom navigation
+- Add desktop sidebar navigation
+- Add sticky top navbar
+- Add search system
+- Add AI signal cards
+- Add charts and analytics widgets
+- Add professional tables
+- Add live tickers
+- Add market heatmaps
+- Add crypto cards
+- Add top gainers and losers
+- Add AI confidence indicators
+- Add whale activity feed
+- Add news sentiment cards
+- Add notifications UI
+- Add portfolio analytics
+
+Current goal:
+Continue improving the CoinAstra platform professionally page-by-page while keeping the design consistent across mobile, tablet, and desktop.
+
+Before editing:
+1. Analyze existing code structure
+2. Reuse existing styling system
+3. Keep everything responsive
+4. Avoid breaking current components
+5. Fix all TypeScript and build errors automatically
+
+After coding:
+- Run build checks
+- Fix errors automatically
+- Optimize mobile layout
+- Ensure clean spacing and alignment
+- Make UI production-ready

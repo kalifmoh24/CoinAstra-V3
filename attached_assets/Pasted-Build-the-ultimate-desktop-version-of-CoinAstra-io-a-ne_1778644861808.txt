@@ -1,0 +1,253 @@
+Build the ultimate desktop version of CoinAstra.io — a next-generation AI crypto intelligence terminal designed for professional traders, investors, analysts, whales, and institutions.
+
+The desktop experience must feel:
+- More advanced than CoinMarketCap
+- More intelligent than TradingView
+- More futuristic than Arkham
+- More premium than Bloomberg Terminal
+- More interactive than Binance dashboard
+
+GENERAL DESKTOP DESIGN:
+- Full-width ultra-modern desktop layout
+- Adaptive 4K support
+- Large analytics workspace
+- Professional spacing and alignment
+- Multi-column dashboard system
+- Smooth hover animations
+- Glassmorphism cards
+- Dynamic gradients
+- Floating glow effects
+- Animated background particles
+- Realtime UI feel
+- Advanced charts everywhere
+- Drag-and-resize widgets
+- Sticky top navigation
+- Collapsible left sidebar
+- Expandable right intelligence panel
+- Theme switcher (dark/light)
+- Fully responsive desktop → tablet transition
+
+TOP NAVIGATION BAR:
+Create a premium sticky desktop top navigation containing:
+- CoinAstra logo
+- Global crypto search
+- Market overview ticker
+- BTC dominance
+- Fear & Greed Index
+- ETH gas tracker
+- Total crypto market cap
+- 24h volume
+- AI sentiment score
+- Notification center
+- AI assistant button
+- User profile dropdown
+- Theme switch
+- Language selector
+
+LEFT SIDEBAR NAVIGATION:
+Each sidebar item must open a complete advanced page.
+
+Sidebar sections:
+- Dashboard
+- Markets
+- AI Intelligence
+- Watchlist
+- Portfolio
+- Whale Tracker
+- On-Chain Analytics
+- Screeners
+- Alerts
+- News & Sentiment
+- Meme Radar
+- Narratives
+- AI Signals
+- DeFi Analytics
+- NFT Analytics
+- Token Unlocks
+- Calendar
+- Exchanges
+- Learning Hub
+- Settings
+
+DESKTOP HOME PAGE STRUCTURE:
+
+SECTION 1 — HERO AI COMMAND CENTER
+Large premium hero section including:
+- AI market sentiment engine
+- Bull vs Bear indicator
+- AI confidence meter
+- Smart money flow
+- Whale activity signal
+- Momentum tracker
+- Multi-timeframe analysis
+- AI recommendation buttons:
+  - Buy
+  - Hold
+  - Risk
+  - Breakout
+- Interactive animated chart
+- AI-generated market commentary
+
+SECTION 2 — GLOBAL MARKET OVERVIEW
+Advanced analytics grid showing:
+- BTC dominance
+- ETH dominance
+- Stablecoin inflows
+- Total market cap
+- Open interest
+- Liquidation heatmap
+- Fear & Greed meter
+- Sector performance
+- Trending chains
+- Institutional inflow tracker
+
+SECTION 3 — LIVE MARKET TABLE
+Professional realtime crypto table with:
+- Rank
+- Coin
+- Price
+- 1h / 24h / 7d
+- Volume
+- Market cap
+- AI score
+- Trend strength
+- Sentiment
+- Whale accumulation
+- Risk score
+- Sparkline chart
+- Watchlist button
+
+Include:
+- Filters
+- Sorting
+- Search
+- Tabs:
+  - All
+  - AI Coins
+  - Meme
+  - Layer 1
+  - RWA
+  - DeFi
+  - Gaming
+  - DePIN
+
+SECTION 4 — AI OPPORTUNITIES
+Display premium AI trading opportunities:
+- Breakout setups
+- Oversold coins
+- Whale accumulation
+- Momentum trades
+- Smart money entries
+- Low risk setups
+- AI confidence percentage
+- Potential gain estimate
+
+SECTION 5 — WHALE TRACKER
+Live institutional wallet tracking panel:
+- Exchange inflows/outflows
+- Smart wallet activity
+- Large transfers
+- Stablecoin mints
+- Whale alerts
+- Heat indicators
+- Time tracking
+
+SECTION 6 — NARRATIVE INTELLIGENCE
+Narrative analysis dashboard:
+- AI Coins
+- RWA
+- DePIN
+- Gaming
+- Layer 2
+- Meme sector
+- DeFi
+- Social sentiment
+- Capital inflow
+- Trend momentum
+- Narrative score
+
+SECTION 7 — MARKET HEATMAP
+Large animated crypto heatmap:
+- BTC
+- ETH
+- SOL
+- BNB
+- DOGE
+- LINK
+- AI sector
+- Meme sector
+- Dynamic colors based on performance
+
+SECTION 8 — NEWS & SENTIMENT
+AI-powered crypto news terminal:
+- Bullish/Bearish tags
+- AI summaries
+- Sentiment analysis
+- Impact score
+- Social engagement
+- Source logos
+- Expandable article cards
+
+SECTION 9 — PORTFOLIO PREVIEW
+Advanced desktop portfolio widget:
+- Total balance
+- Daily PnL
+- Allocation chart
+- Risk analysis
+- AI portfolio health
+- Best/worst performers
+- Rebalancing suggestions
+
+SECTION 10 — ON-CHAIN ANALYTICS
+Professional blockchain intelligence cards:
+- Gas tracker
+- TVL
+- Active wallets
+- Bridge flows
+- DEX volume
+- Stablecoin flow
+- Chain comparison
+
+SECTION 11 — AI ALERTS CENTER
+Realtime AI notifications:
+- Whale alerts
+- Breakouts
+- Smart money signals
+- Volume anomalies
+- Risk warnings
+- Liquidation events
+- Exchange inflows
+
+SECTION 12 — FOOTER TERMINAL
+Premium desktop footer including:
+- Live mini ticker
+- API status
+- Market status
+- Realtime clock
+- Data provider indicators
+- Terminal controls
+
+DESKTOP UX REQUIREMENTS:
+- Extremely smooth animations
+- No empty spaces
+- Perfect spacing consistency
+- Fully responsive
+- Desktop optimized
+- Keyboard shortcuts
+- Premium hover states
+- Scroll animations
+- Skeleton loading states
+- Realtime transitions
+- High-end visual polish
+
+CODE REQUIREMENTS:
+- Reusable components
+- Clean architecture
+- TypeScript safe
+- No build errors
+- Optimized performance
+- Lazy loaded sections
+- Organized folder structure
+- Production-ready quality
+
+Continue building all pages with the same premium desktop system and visual consistency.

@@ -1,0 +1,107 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-bull: hsl(var(--bull));
+  --color-bear: hsl(var(--bear));
+
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+:root {
+  --background: 228 28% 10%;
+  --foreground: 228 7% 84%;
+  --card: 228 22% 13%;
+  --card-foreground: 228 7% 84%;
+  --popover: 228 22% 13%;
+  --popover-foreground: 228 7% 84%;
+  --primary: 228 100% 59%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 228 16% 18%;
+  --secondary-foreground: 228 7% 84%;
+  --muted: 228 16% 16%;
+  --muted-foreground: 228 5% 52%;
+  --accent: 228 16% 20%;
+  --accent-foreground: 228 7% 84%;
+  --destructive: 4 79% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 228 16% 19%;
+  --input: 228 16% 19%;
+  --ring: 228 100% 59%;
+  --bull: 175 50% 40%;
+  --bear: 4 79% 60%;
+  --app-font-sans: "Inter", sans-serif;
+  --app-font-mono: "Space Mono", monospace;
+  --radius: 0.25rem;
+}
+
+.dark {
+  --background: 228 28% 8%;
+  --foreground: 228 7% 84%;
+  --card: 228 22% 11%;
+  --card-foreground: 228 7% 84%;
+  --popover: 228 22% 13%;
+  --popover-foreground: 228 7% 84%;
+  --primary: 228 100% 59%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 228 16% 16%;
+  --secondary-foreground: 228 7% 84%;
+  --muted: 228 16% 14%;
+  --muted-foreground: 228 5% 50%;
+  --accent: 228 16% 18%;
+  --accent-foreground: 228 7% 84%;
+  --destructive: 4 79% 58%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 228 15% 17%;
+  --input: 228 15% 17%;
+  --ring: 228 100% 59%;
+  --bull: 175 50% 42%;
+  --bear: 4 79% 58%;
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply font-sans antialiased bg-background text-foreground text-xs; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(228 15% 22%); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(228 15% 30%); }
+}
+
+.bull { color: hsl(var(--bull)); }
+.bear { color: hsl(var(--bear)); }
+.bg-bull { background-color: hsl(var(--bull)); }
+.bg-bear { background-color: hsl(var(--bear)); }
+.border-bull { border-color: hsl(var(--bull)); }
+.border-bear { border-color: hsl(var(--bear)); }
+.panel { @apply bg-card border-b border-border; }
+.panel-header { @apply flex items-center justify-between px-2 py-1 border-b border-border; }
+.panel-title { @apply text-[10px] font-bold uppercase tracking-wider text-muted-foreground; }
+.panel-link { @apply text-[10px] text-primary hover:underline cursor-pointer; }
+.row-item { @apply flex items-center justify-between px-2 py-1 hover:bg-secondary/50 transition-colors; }

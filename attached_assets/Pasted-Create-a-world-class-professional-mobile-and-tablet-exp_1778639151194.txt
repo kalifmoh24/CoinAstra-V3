@@ -1,0 +1,246 @@
+Create a world-class professional mobile and tablet experience for CoinAstra.
+
+The mobile/tablet version must feel like a premium institutional-grade crypto intelligence terminal used by professional traders, investors, hedge funds, and analysts.
+
+Design inspiration:
+- TradingView Mobile
+- Binance Pro
+- CoinMarketCap Pro
+- Arkham Intelligence
+- Nansen
+- Bloomberg Terminal
+- DexScreener
+- Bybit
+- Phantom Wallet UI
+
+The platform must support:
+- Mobile phones
+- Foldable devices
+- Tablets
+- iPads
+- Landscape and portrait modes
+
+━━━━━━━━━━━━━━━━━━━
+CORE EXPERIENCE
+━━━━━━━━━━━━━━━━━━━
+
+The app should feel:
+- Extremely smooth
+- Fast and responsive
+- Premium and futuristic
+- Professional financial-grade
+- Clean but information-dense
+- AI-powered and intelligent
+
+The mobile experience must NOT feel like a squeezed desktop page.
+It must be redesigned specifically for touch devices.
+
+━━━━━━━━━━━━━━━━━━━
+THEME SYSTEM
+━━━━━━━━━━━━━━━━━━━
+
+Build a complete dual-theme system:
+
+1. DARK MODE
+- Deep navy/black gradients
+- Neon blue/purple accents
+- Premium glassmorphism
+- Soft glow effects
+- Futuristic crypto-terminal feel
+
+2. LIGHT MODE
+- Professional Bloomberg-style white interface
+- Elegant soft shadows
+- Clean cards
+- Blue finance accents
+- High readability
+
+Features:
+- Theme toggle
+- Persistent saved theme
+- System theme detection
+- Smooth transitions between themes
+
+━━━━━━━━━━━━━━━━━━━
+MOBILE NAVIGATION
+━━━━━━━━━━━━━━━━━━━
+
+Create a professional mobile navigation system:
+
+BOTTOM NAVIGATION:
+- Home
+- Markets
+- AI Insights
+- Watchlist
+- Portfolio
+- Profile
+
+Requirements:
+- Floating glass navigation bar
+- Animated active states
+- Haptic-style animations
+- Responsive touch interactions
+- Icon + label design
+
+TABLET VERSION:
+- Collapsible sidebar
+- Adaptive layout
+- Multi-column dashboard
+- Larger analytics panels
+
+━━━━━━━━━━━━━━━━━━━
+HEADER SYSTEM
+━━━━━━━━━━━━━━━━━━━
+
+Mobile header should include:
+- CoinAstra logo
+- Search button
+- Notification center
+- Profile avatar
+- Theme switch
+- Live BTC ticker
+- Market sentiment indicator
+
+Sticky animated header while scrolling.
+
+━━━━━━━━━━━━━━━━━━━
+CHART EXPERIENCE
+━━━━━━━━━━━━━━━━━━━
+
+Build an advanced TradingView-style mobile chart system:
+
+Features:
+- Full-width responsive chart
+- Multiple timeframes
+- Indicators
+- Drawing tools
+- Fullscreen mode
+- Pinch zoom
+- Swipe gestures
+- Smooth transitions
+- Candlestick and line modes
+- Volume overlays
+
+Tablet mode:
+- Larger professional chart terminal
+- Side analytics panels
+- Multi-chart capability
+
+━━━━━━━━━━━━━━━━━━━
+CRYPTO MARKET SECTION
+━━━━━━━━━━━━━━━━━━━
+
+Create responsive professional market cards.
+
+Each card must include:
+- Coin logo
+- Name + symbol
+- Live price
+- 24h change
+- Market cap
+- Volume
+- Dominance
+- AI confidence
+- Buy/Sell probability
+- Mini sparkline
+- Sentiment score
+
+Visual quality:
+- Gradient borders
+- Hover animations
+- Glow effects
+- Press interactions
+- Smooth updates
+
+━━━━━━━━━━━━━━━━━━━
+AI INTELLIGENCE SYSTEM
+━━━━━━━━━━━━━━━━━━━
+
+Create advanced AI analysis panels:
+
+Include:
+- AI sentiment engine
+- Bullish/Bearish prediction
+- Whale tracking
+- Smart money activity
+- Narrative analysis
+- Fear & Greed index
+- AI confidence score
+- Social sentiment
+- Trending sectors
+- Meme coin scanner
+- Wallet tracking
+- AI alerts
+
+Tablet version:
+- Multi-panel AI dashboard
+- Side-by-side analytics
+- Expandable intelligence windows
+
+━━━━━━━━━━━━━━━━━━━
+WATCHLIST & PORTFOLIO
+━━━━━━━━━━━━━━━━━━━
+
+Build:
+- Swipeable watchlists
+- Favorite coins
+- Portfolio tracking
+- Profit/loss overview
+- AI recommendations
+- Performance charts
+
+━━━━━━━━━━━━━━━━━━━
+ANIMATIONS & UX
+━━━━━━━━━━━━━━━━━━━
+
+Add:
+- Smooth transitions
+- Page animations
+- Loading skeletons
+- Floating elements
+- Glass blur effects
+- Interactive cards
+- Snap scrolling
+- Expandable panels
+- Gesture support
+- Pull-to-refresh
+- Touch feedback animations
+
+━━━━━━━━━━━━━━━━━━━
+PERFORMANCE
+━━━━━━━━━━━━━━━━━━━
+
+Optimize for:
+- Fast loading
+- Lazy loading
+- Optimized rendering
+- Mobile battery efficiency
+- Smooth 60fps animations
+- Clean reusable components
+
+━━━━━━━━━━━━━━━━━━━
+TECHNICAL REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━
+
+Use:
+- Next.js
+- React
+- TailwindCSS
+- Framer Motion
+- Responsive architecture
+- Mobile-first design system
+
+Create:
+- Reusable responsive components
+- Clean scalable file structure
+- Professional code organization
+
+━━━━━━━━━━━━━━━━━━━
+FINAL GOAL
+━━━━━━━━━━━━━━━━━━━
+
+CoinAstra should feel like:
+“Bloomberg Terminal + TradingView + Arkham + AI Intelligence”
+inside one premium mobile and tablet crypto application.
+
+The result must look production-ready, modern, premium, and investor-grade.

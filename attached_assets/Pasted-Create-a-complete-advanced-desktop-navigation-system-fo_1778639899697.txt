@@ -1,0 +1,315 @@
+Create a complete advanced desktop navigation system for CoinAstra.
+
+Every navigation button must open its own dedicated professional page with real crypto intelligence data, AI analytics, charts, and responsive layouts.
+
+━━━━━━━━━━━━━━━━━━━
+1. DASHBOARD
+━━━━━━━━━━━━━━━━━━━
+
+Purpose:
+Main AI crypto command center.
+
+When clicked open:
+- Global market overview
+- BTC dominance
+- Fear & Greed index
+- AI market sentiment
+- Top gainers/losers
+- Trending narratives
+- Whale activity summary
+- AI opportunities
+- Portfolio snapshot
+- Market heatmap
+- Live market ticker
+- Recent alerts
+- AI-generated market summary
+
+Widgets:
+- Mini charts
+- Market cards
+- AI confidence gauges
+- News sentiment
+
+━━━━━━━━━━━━━━━━━━━
+2. MARKETS
+━━━━━━━━━━━━━━━━━━━
+
+Purpose:
+Professional crypto market explorer.
+
+When clicked display:
+- Top 100/500 cryptocurrencies
+- Search system
+- Sorting
+- Filters
+- Market cap
+- Volume
+- Liquidity
+- Dominance
+- Price movements
+- Categories
+- AI scores
+
+Tabs:
+- All Coins
+- Trending
+- Gainers
+- Losers
+- New Listings
+- Meme Coins
+- AI Coins
+- DeFi
+- Layer 1
+- Gaming
+- RWA
+- Solana Ecosystem
+- Ethereum Ecosystem
+
+Features:
+- Live updates
+- Watchlist button
+- Mini charts
+- Quick AI analysis
+
+━━━━━━━━━━━━━━━━━━━
+3. COIN DETAILS PAGE
+━━━━━━━━━━━━━━━━━━━
+
+When clicking any coin open:
+- Full TradingView chart
+- Technical analysis
+- Tokenomics
+- AI predictions
+- Social sentiment
+- Holder analytics
+- Whale wallets
+- Smart money flow
+- Exchange inflow/outflow
+- Volume analysis
+- Historical performance
+- Coin news
+- Related narratives
+- Risk analysis
+- AI confidence score
+- Buy/Sell probability
+
+━━━━━━━━━━━━━━━━━━━
+4. AI INSIGHTS
+━━━━━━━━━━━━━━━━━━━
+
+Purpose:
+AI intelligence center.
+
+Display:
+- AI market predictions
+- Bullish/Bearish scanner
+- Smart money AI
+- AI confidence ratings
+- AI trade setups
+- Narrative strength
+- Momentum detection
+- AI-generated signals
+- Risk assessment
+- AI anomaly detection
+- AI sentiment engine
+
+Sections:
+- AI Top Picks
+- AI Alerts
+- AI Opportunities
+- AI Risk Scanner
+
+━━━━━━━━━━━━━━━━━━━
+5. WHALE TRACKER
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+- Live whale transactions
+- Wallet movements
+- Exchange transfers
+- Smart money wallets
+- Top holders
+- Insider movements
+- Wallet profit tracking
+- Whale accumulation
+- Whale sell pressure
+
+Features:
+- Real-time alerts
+- Wallet labels
+- Transaction heatmaps
+
+━━━━━━━━━━━━━━━━━━━
+6. ON-CHAIN ANALYTICS
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+- Active wallets
+- Transaction volume
+- Gas fees
+- Chain activity
+- Bridge activity
+- Token transfers
+- DEX volume
+- TVL tracking
+- Staking analytics
+- Liquidity flows
+
+Chains:
+- Ethereum
+- Solana
+- Base
+- BSC
+- Arbitrum
+- SUI
+- TRON
+
+━━━━━━━━━━━━━━━━━━━
+7. AI SCREENER
+━━━━━━━━━━━━━━━━━━━
+
+Purpose:
+Find opportunities automatically.
+
+Display:
+- Volume spikes
+- Momentum coins
+- Meme pumps
+- Breakouts
+- Smart money buys
+- AI-rated gems
+- Low cap opportunities
+- Narrative movers
+- Trend reversals
+
+Filters:
+- Market cap
+- Volume
+- Chain
+- Risk level
+- AI confidence
+
+━━━━━━━━━━━━━━━━━━━
+8. NEWS & SENTIMENT
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+- Crypto news feed
+- AI summarized news
+- X/Twitter sentiment
+- Reddit sentiment
+- Telegram sentiment
+- Fear/greed news score
+- Breaking news alerts
+- Narrative heat tracking
+
+Features:
+- AI-generated summaries
+- News impact score
+- Bullish/Bearish reactions
+
+━━━━━━━━━━━━━━━━━━━
+9. PORTFOLIO
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+- Holdings
+- PNL tracking
+- Portfolio allocation
+- AI portfolio analysis
+- Profit/loss charts
+- Risk exposure
+- Best/worst performers
+- AI recommendations
+- Watchlists
+- Wallet connection
+
+━━━━━━━━━━━━━━━━━━━
+10. WATCHLIST
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+- Favorite coins
+- Custom alerts
+- AI signals
+- Watchlist performance
+- Price alerts
+- Whale alerts
+- Trend changes
+
+━━━━━━━━━━━━━━━━━━━
+11. ALERTS CENTER
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+- Price alerts
+- Whale alerts
+- AI alerts
+- Breaking news
+- Market volatility alerts
+- Portfolio alerts
+- Smart money alerts
+
+━━━━━━━━━━━━━━━━━━━
+12. HEATMAP
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+- Global crypto heatmap
+- Sector rotation
+- Market flows
+- Capital movement
+- Volume heatmap
+- Chain heatmap
+- Meme sector heatmap
+
+━━━━━━━━━━━━━━━━━━━
+13. LEARN / ACADEMY
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+- Crypto education
+- AI tutorials
+- Trading basics
+- On-chain education
+- Market psychology
+- Strategy guides
+- Video lessons
+
+━━━━━━━━━━━━━━━━━━━
+14. SETTINGS
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+- Theme settings
+- Notification settings
+- API keys
+- Wallet connections
+- Security settings
+- Language settings
+- Display customization
+
+━━━━━━━━━━━━━━━━━━━
+15. USER PROFILE
+━━━━━━━━━━━━━━━━━━━
+
+Display:
+- Account info
+- Subscription
+- Saved alerts
+- Saved watchlists
+- Connected wallets
+- Activity history
+- Security management
+
+━━━━━━━━━━━━━━━━━━━
+FINAL EXPERIENCE
+━━━━━━━━━━━━━━━━━━━
+
+CoinAstra must feel like:
+- Bloomberg Terminal
+- TradingView
+- Arkham
+- Nansen
+- CoinMarketCap Pro
+combined into one AI-powered crypto intelligence operating system.

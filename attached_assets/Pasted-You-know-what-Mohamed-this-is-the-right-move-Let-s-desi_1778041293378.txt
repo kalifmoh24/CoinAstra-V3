@@ -1,0 +1,397 @@
+You know what, Mohamed—this is the right move.
+Let’s design XogsideIQ v1.0 as a real product on Replit, with every feature A–Z clearly defined so you can build or hand it to a dev.
+
+Below is a full, copy‑ready spec: tech stack, data models, features, pages, and logic.
+
+---
+
+1. Tech stack
+
+• Frontend: Next.js (React, TypeScript, App Router)
+• UI: Tailwind CSS + shadcn/ui (or similar)
+• Backend: Next.js API routes
+• Database: Supabase (PostgreSQL + Auth)
+• Auth: Supabase Auth (email/password, OAuth later)
+• Realtime: Supabase channels (for live prices/signals later)
+• Deployment: Vercel (frontend + API) or Replit hosting
+• AI: OpenAI / Anthropic API (for research, scoring, insights)
+• PWA: Next-PWA or custom service worker
+
+
+---
+
+2. Core data models (database schema)
+
+2.1 Users
+
+• id
+• email
+• password_hash (handled by Supabase)
+• created_at
+• plan: free | pro | enterprise (future)
+
+
+---
+
+2.2 Tokens
+
+• id
+• symbol (e.g. SOL)
+• name
+• logo_url
+• chain: Solana, Ethereum, etc.
+• category_ids: array → Narratives
+• description
+• website_url
+• whitepaper_url
+• coingecko_id / cmc_id
+• created_at
+
+
+---
+
+2.3 TokenMarketData
+
+• id
+• token_id → Tokens
+• price
+• price_change_24h
+• price_change_7d
+• market_cap
+• volume_24h
+• fdv
+• circulating_supply
+• total_supply
+• updated_at
+
+
+---
+
+2.4 TokenScores
+
+• id
+• token_id → Tokens
+• overall_score (0–100)
+• fundamental_score
+• technical_score
+• sentiment_score
+• risk_score
+• narrative_momentum_score
+• final_grade: A+, A, B, C, D, F
+• grade_explanation
+• updated_at
+
+
+---
+
+2.5 Narratives
+
+• id
+• name: DePIN, AI, L2, DeFi, Meme, Gaming, RWA, etc.
+• slug
+• description
+• icon_key
+• momentum_score
+• perf_24h
+• perf_7d
+• created_at
+
+
+---
+
+2.6 Signals
+
+• id
+• token_id → Tokens
+• action: BUY | SELL | WATCH
+• entry_price
+• target_price
+• stop_loss_price (optional)
+• confidence: 0–100
+• timeframe: scalp, swing, position
+• status: active | hit_target | stopped | expired
+• created_at
+• expires_at
+
+
+---
+
+2.7 PortfolioAccounts
+
+• id
+• user_id
+• type: exchange | wallet | manual
+• name: Binance, MetaMask, Manual Portfolio
+• exchange_id (optional)
+• wallet_address (optional)
+• network: Ethereum, Solana, BSC, etc.
+• is_active
+• created_at
+
+
+---
+
+2.8 Positions
+
+• id
+• user_id
+• account_id → PortfolioAccounts
+• token_id → Tokens
+• symbol
+• amount
+• avg_buy_price
+• current_price
+• value_usd
+• invested_usd
+• pnl_usd
+• pnl_percent
+• target_price (nullable)
+• target_progress_percent
+• created_at
+
+
+---
+
+2.9 News
+
+• id
+• title
+• source
+• url
+• summary
+• related_token_ids (array)
+• related_narrative_ids (array)
+• published_at
+
+
+---
+
+3. Core modules & features (A–Z)
+
+3.1 Auth & user system
+
+• Email/password login
+• Basic profile page
+• Plan field for future monetization
+
+
+---
+
+3.2 Home dashboard
+
+Sections:
+
+• Market Overview: BTC, ETH, total market cap, BTC dominance, Fear & Greed, gas fees, funding rates
+• Trending Narratives: list with momentum score, 24h/7d perf, top 3 tokens
+• Top Movers: gainers, losers, volume, most searched
+• Whale Activity: large buys/sells (placeholder or API)
+• AI Insights: daily AI summary (top narratives, risks, opportunities)
+• News Highlights: 3–5 headlines with summaries
+
+
+---
+
+3.3 Token search & research page
+
+When user searches a coin:
+
+Sections:
+
+• Header: price, % change, market cap, volume, FDV, supply
+• Score circles: Overall, Fundamental, Technical, Sentiment, Risk, Narrative Momentum
+• Final Grade: A+ / A / B / C / D / F + explanation
+• Overview: what it does, use cases, value prop
+• Tokenomics: distribution, unlocks, vesting
+• On‑chain metrics: holders, tx count, TVL (if DeFi)
+• Social metrics: Twitter, Telegram, Discord, growth
+• Developer activity: GitHub commits, repos (if available)
+• Narrative context: which narratives it belongs to, momentum
+• Whale activity: accumulation/distribution (if available)
+• News related to token
+• AI Summary: strengths, weaknesses, risks, opportunity level
+
+
+AI endpoint:
+
+• Input: token data JSON + market data + narrative data
+• Output: scores, grade, explanations, summary
+
+
+---
+
+3.4 Narratives page
+
+• List of all narratives (DePIN, AI, L2, DeFi, Meme, Gaming, RWA, etc.)
+• Each card: icon, description, 24h/7d perf, momentum score
+• Click → narrative detail page:• Description
+• Momentum history
+• Top tokens
+• AI commentary
+
+
+
+---
+
+3.5 Signals module
+
+• Signals list: token, action, entry, target, confidence, % to target, status
+• Auto‑update job (cron or scheduled function):• Fetch prices
+• If price ≥ target → status = hit_target
+• If now > expires_at → status = expired
+
+• UI:• Show only active by default
+• Filters: active, hit, expired
+• Progress bar: % to target
+
+
+
+---
+
+3.6 Portfolio module
+
+Features:
+
+• Manual add:• Token, amount, buy price, date, target price
+
+• Portfolio analytics:• Total value
+• Total invested
+• Total PnL (USD + %)
+• Allocation by token
+• Allocation by sector/narrative
+• Portfolio risk score (weighted)
+• Portfolio momentum score (weighted)
+• Portfolio target progress (weighted % to targets)
+
+• Per‑position:• Value, PnL, target price, % to target, progress bar
+
+• Future:• Exchange connections (Binance, Bybit, etc.)
+• Wallet connections (EVM, Solana, etc.)
+
+
+
+---
+
+3.7 AI portfolio insights
+
+API endpoint:
+
+• Input: user positions + token scores + narratives
+• Output:• Strengths
+• Weaknesses
+• Diversification score
+• Risk level
+• Overexposed sectors
+• Underexposed opportunities
+• Rebalancing suggestions
+• Target price suggestions
+
+
+
+---
+
+3.8 Dark & light mode
+
+• Use Tailwind + theme provider
+• Toggle in navbar
+• Persist in localStorage
+• All charts, icons, and components support both themes
+
+
+---
+
+3.9 Icons & visual system
+
+• Use a consistent icon set (Lucide/Feather)
+• Custom icons (or mapped icons) for:• DePIN
+• AI
+• L2
+• DeFi
+• Meme
+• Gaming
+• Privacy
+• Infrastructure
+• RWA
+• DEX
+• Stablecoins
+
+• Dark/light variants if needed
+
+
+---
+
+3.10 PWA & mobile app readiness
+
+• Add manifest.json
+• Add service worker
+• Add icons & splash screens
+• Make it installable on mobile
+• Later: wrap with Capacitor / PWABuilder for App Store/Play Store
+
+
+---
+
+3.11 Admin / internal tools (optional but powerful)
+
+• Admin dashboard:• Manage tokens
+• Manage narratives
+• Override scores
+• View users
+• Trigger AI refresh for scores/signals
+
+
+
+---
+
+4. Build order (recommended)
+
+Phase 1 – Foundation
+
+• Setup Next.js + Supabase
+• Auth
+• Tokens + market data models
+• Home (basic)
+• Token research (basic)
+
+
+Phase 2 – Intelligence
+
+• AI research endpoint
+• Scoring + grading
+• Narratives module
+• Signals (manual + AI‑assisted)
+
+
+Phase 3 – Portfolio
+
+• Manual portfolio
+• Analytics
+• Target price logic
+• AI portfolio insights
+
+
+Phase 4 – Polish
+
+• Dark/light mode
+• Animations
+• Icons
+• PWA
+
+
+Phase 5 – Distribution
+
+• Deploy to Vercel
+• Connect domain (Xogsideiq.com)
+• Prepare PWA → mobile wrapper
+
+
+---
+
+If you want, next step I can:
+
+• Write the exact Supabase schema (SQL)
+• Give you a Next.js folder structure
+• Draft the AI prompts for research, scoring, signals, and portfolio
+• Or design the Home + Research + Portfolio pages in detail
+
+
+Tell me which one you want first: schema, folder structure, or AI prompts.

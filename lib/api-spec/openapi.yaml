@@ -1,0 +1,895 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: XogsideIQ - Crypto Intelligence Platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: market
+    description: Market overview and movers
+  - name: tokens
+    description: Token research and data
+  - name: narratives
+    description: Narrative tracking
+  - name: signals
+    description: Trading signals
+  - name: portfolio
+    description: Portfolio management
+  - name: news
+    description: Crypto news feed
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /market/overview:
+    get:
+      operationId: getMarketOverview
+      tags: [market]
+      summary: Get global market overview
+      responses:
+        "200":
+          description: Market overview data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketOverview"
+
+  /market/movers:
+    get:
+      operationId: getMarketMovers
+      tags: [market]
+      summary: Get top gainers, losers, and volume leaders
+      responses:
+        "200":
+          description: Market movers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketMovers"
+
+  /tokens:
+    get:
+      operationId: listTokens
+      tags: [tokens]
+      summary: List or search tokens
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: Number of results
+        - name: offset
+          in: query
+          schema:
+            type: integer
+          description: Offset for pagination
+      responses:
+        "200":
+          description: List of tokens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Token"
+
+  /tokens/{symbol}:
+    get:
+      operationId: getToken
+      tags: [tokens]
+      summary: Get full token research data
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Token detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenDetail"
+        "404":
+          description: Token not found
+
+  /tokens/{symbol}/scores:
+    get:
+      operationId: getTokenScores
+      tags: [tokens]
+      summary: Get token intelligence scores and grade
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Token scores
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenScores"
+
+  /tokens/{symbol}/ai-research:
+    get:
+      operationId: getTokenAiResearch
+      tags: [tokens]
+      summary: Get AI-generated research summary for a token
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: AI research summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiResearch"
+
+  /tokens/{symbol}/news:
+    get:
+      operationId: getTokenNews
+      tags: [tokens]
+      summary: Get news related to a token
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Token news
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NewsItem"
+
+  /narratives:
+    get:
+      operationId: listNarratives
+      tags: [narratives]
+      summary: List all crypto narratives
+      responses:
+        "200":
+          description: Narratives
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Narrative"
+
+  /narratives/{slug}:
+    get:
+      operationId: getNarrative
+      tags: [narratives]
+      summary: Get narrative detail with top tokens
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Narrative detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NarrativeDetail"
+        "404":
+          description: Narrative not found
+
+  /signals:
+    get:
+      operationId: listSignals
+      tags: [signals]
+      summary: List trading signals
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, hit_target, stopped, expired]
+          description: Filter by status
+      responses:
+        "200":
+          description: Signals list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Signal"
+    post:
+      operationId: createSignal
+      tags: [signals]
+      summary: Create a new trading signal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSignalBody"
+      responses:
+        "201":
+          description: Signal created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Signal"
+
+  /signals/{id}:
+    patch:
+      operationId: updateSignal
+      tags: [signals]
+      summary: Update a signal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSignalBody"
+      responses:
+        "200":
+          description: Updated signal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Signal"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteSignal
+      tags: [signals]
+      summary: Delete a signal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /portfolio/positions:
+    get:
+      operationId: listPositions
+      tags: [portfolio]
+      summary: List portfolio positions
+      responses:
+        "200":
+          description: Positions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Position"
+    post:
+      operationId: createPosition
+      tags: [portfolio]
+      summary: Add a position to portfolio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePositionBody"
+      responses:
+        "201":
+          description: Position created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Position"
+
+  /portfolio/positions/{id}:
+    patch:
+      operationId: updatePosition
+      tags: [portfolio]
+      summary: Update a portfolio position
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePositionBody"
+      responses:
+        "200":
+          description: Updated position
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Position"
+        "404":
+          description: Not found
+    delete:
+      operationId: deletePosition
+      tags: [portfolio]
+      summary: Delete a portfolio position
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /portfolio/summary:
+    get:
+      operationId: getPortfolioSummary
+      tags: [portfolio]
+      summary: Get portfolio analytics summary
+      responses:
+        "200":
+          description: Portfolio summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioSummary"
+
+  /portfolio/insights:
+    get:
+      operationId: getPortfolioInsights
+      tags: [portfolio]
+      summary: Get AI-generated portfolio insights
+      responses:
+        "200":
+          description: AI portfolio insights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioInsights"
+
+  /news:
+    get:
+      operationId: listNews
+      tags: [news]
+      summary: List latest crypto news
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: News items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NewsItem"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    MarketOverview:
+      type: object
+      properties:
+        btcPrice:
+          type: number
+        btcChange24h:
+          type: number
+        ethPrice:
+          type: number
+        ethChange24h:
+          type: number
+        totalMarketCap:
+          type: number
+        totalVolume24h:
+          type: number
+        btcDominance:
+          type: number
+        fearGreedIndex:
+          type: integer
+        fearGreedLabel:
+          type: string
+        activeCoins:
+          type: integer
+      required: [btcPrice, btcChange24h, ethPrice, ethChange24h, totalMarketCap, totalVolume24h, btcDominance, fearGreedIndex, fearGreedLabel, activeCoins]
+
+    TokenMover:
+      type: object
+      properties:
+        symbol:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        priceChange24h:
+          type: number
+        volume24h:
+          type: number
+        logoUrl:
+          type: ["string", "null"]
+      required: [symbol, name, price, priceChange24h, volume24h]
+
+    MarketMovers:
+      type: object
+      properties:
+        gainers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TokenMover"
+        losers:
+          type: array
+          items:
+            $ref: "#/components/schemas/TokenMover"
+        volumeLeaders:
+          type: array
+          items:
+            $ref: "#/components/schemas/TokenMover"
+      required: [gainers, losers, volumeLeaders]
+
+    Token:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        name:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        chain:
+          type: string
+        description:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+        priceChange24h:
+          type: ["number", "null"]
+        marketCap:
+          type: ["number", "null"]
+        volume24h:
+          type: ["number", "null"]
+        overallScore:
+          type: ["integer", "null"]
+        finalGrade:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, symbol, name, chain, createdAt]
+
+    TokenDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        symbol:
+          type: string
+        name:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        chain:
+          type: string
+        description:
+          type: ["string", "null"]
+        websiteUrl:
+          type: ["string", "null"]
+        whitepaperUrl:
+          type: ["string", "null"]
+        price:
+          type: ["number", "null"]
+        priceChange24h:
+          type: ["number", "null"]
+        priceChange7d:
+          type: ["number", "null"]
+        marketCap:
+          type: ["number", "null"]
+        volume24h:
+          type: ["number", "null"]
+        fdv:
+          type: ["number", "null"]
+        circulatingSupply:
+          type: ["number", "null"]
+        totalSupply:
+          type: ["number", "null"]
+        overallScore:
+          type: ["integer", "null"]
+        fundamentalScore:
+          type: ["integer", "null"]
+        technicalScore:
+          type: ["integer", "null"]
+        sentimentScore:
+          type: ["integer", "null"]
+        riskScore:
+          type: ["integer", "null"]
+        narrativeMomentumScore:
+          type: ["integer", "null"]
+        finalGrade:
+          type: ["string", "null"]
+        gradeExplanation:
+          type: ["string", "null"]
+        narratives:
+          type: array
+          items:
+            $ref: "#/components/schemas/Narrative"
+        createdAt:
+          type: string
+      required: [id, symbol, name, chain, createdAt, narratives]
+
+    TokenScores:
+      type: object
+      properties:
+        tokenId:
+          type: integer
+        symbol:
+          type: string
+        overallScore:
+          type: integer
+        fundamentalScore:
+          type: integer
+        technicalScore:
+          type: integer
+        sentimentScore:
+          type: integer
+        riskScore:
+          type: integer
+        narrativeMomentumScore:
+          type: integer
+        finalGrade:
+          type: string
+        gradeExplanation:
+          type: string
+        updatedAt:
+          type: string
+      required: [tokenId, symbol, overallScore, fundamentalScore, technicalScore, sentimentScore, riskScore, narrativeMomentumScore, finalGrade, gradeExplanation, updatedAt]
+
+    AiResearch:
+      type: object
+      properties:
+        symbol:
+          type: string
+        summary:
+          type: string
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        risks:
+          type: array
+          items:
+            type: string
+        opportunityLevel:
+          type: string
+          enum: [low, moderate, high, very_high]
+        generatedAt:
+          type: string
+      required: [symbol, summary, strengths, weaknesses, risks, opportunityLevel, generatedAt]
+
+    Narrative:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        iconKey:
+          type: string
+        momentumScore:
+          type: integer
+        perf24h:
+          type: number
+        perf7d:
+          type: number
+        tokenCount:
+          type: integer
+        createdAt:
+          type: string
+      required: [id, name, slug, iconKey, momentumScore, perf24h, perf7d, tokenCount, createdAt]
+
+    NarrativeDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+        iconKey:
+          type: string
+        momentumScore:
+          type: integer
+        perf24h:
+          type: number
+        perf7d:
+          type: number
+        aiCommentary:
+          type: ["string", "null"]
+        topTokens:
+          type: array
+          items:
+            $ref: "#/components/schemas/Token"
+        createdAt:
+          type: string
+      required: [id, name, slug, iconKey, momentumScore, perf24h, perf7d, topTokens, createdAt]
+
+    Signal:
+      type: object
+      properties:
+        id:
+          type: integer
+        tokenSymbol:
+          type: string
+        tokenName:
+          type: string
+        action:
+          type: string
+          enum: [BUY, SELL, WATCH]
+        entryPrice:
+          type: number
+        targetPrice:
+          type: number
+        stopLossPrice:
+          type: ["number", "null"]
+        confidence:
+          type: integer
+        timeframe:
+          type: string
+          enum: [scalp, swing, position]
+        status:
+          type: string
+          enum: [active, hit_target, stopped, expired]
+        progressPercent:
+          type: number
+        createdAt:
+          type: string
+        expiresAt:
+          type: ["string", "null"]
+      required: [id, tokenSymbol, tokenName, action, entryPrice, targetPrice, confidence, timeframe, status, progressPercent, createdAt]
+
+    CreateSignalBody:
+      type: object
+      properties:
+        tokenSymbol:
+          type: string
+        tokenName:
+          type: string
+        action:
+          type: string
+          enum: [BUY, SELL, WATCH]
+        entryPrice:
+          type: number
+        targetPrice:
+          type: number
+        stopLossPrice:
+          type: ["number", "null"]
+        confidence:
+          type: integer
+        timeframe:
+          type: string
+          enum: [scalp, swing, position]
+        expiresAt:
+          type: ["string", "null"]
+      required: [tokenSymbol, tokenName, action, entryPrice, targetPrice, confidence, timeframe]
+
+    UpdateSignalBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [active, hit_target, stopped, expired]
+        targetPrice:
+          type: number
+        stopLossPrice:
+          type: ["number", "null"]
+        confidence:
+          type: integer
+
+    Position:
+      type: object
+      properties:
+        id:
+          type: integer
+        tokenSymbol:
+          type: string
+        tokenName:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        amount:
+          type: number
+        avgBuyPrice:
+          type: number
+        currentPrice:
+          type: number
+        valueUsd:
+          type: number
+        investedUsd:
+          type: number
+        pnlUsd:
+          type: number
+        pnlPercent:
+          type: number
+        targetPrice:
+          type: ["number", "null"]
+        targetProgressPercent:
+          type: ["number", "null"]
+        narrativeSlug:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required: [id, tokenSymbol, tokenName, amount, avgBuyPrice, currentPrice, valueUsd, investedUsd, pnlUsd, pnlPercent, createdAt]
+
+    CreatePositionBody:
+      type: object
+      properties:
+        tokenSymbol:
+          type: string
+        tokenName:
+          type: string
+        amount:
+          type: number
+        avgBuyPrice:
+          type: number
+        targetPrice:
+          type: ["number", "null"]
+        narrativeSlug:
+          type: ["string", "null"]
+      required: [tokenSymbol, tokenName, amount, avgBuyPrice]
+
+    UpdatePositionBody:
+      type: object
+      properties:
+        amount:
+          type: number
+        avgBuyPrice:
+          type: number
+        targetPrice:
+          type: ["number", "null"]
+
+    PortfolioSummary:
+      type: object
+      properties:
+        totalValueUsd:
+          type: number
+        totalInvestedUsd:
+          type: number
+        totalPnlUsd:
+          type: number
+        totalPnlPercent:
+          type: number
+        positionCount:
+          type: integer
+        allocationByNarrative:
+          type: array
+          items:
+            $ref: "#/components/schemas/AllocationItem"
+        topPerformer:
+          $ref: "#/components/schemas/Position"
+        worstPerformer:
+          $ref: "#/components/schemas/Position"
+      required: [totalValueUsd, totalInvestedUsd, totalPnlUsd, totalPnlPercent, positionCount, allocationByNarrative]
+
+    AllocationItem:
+      type: object
+      properties:
+        label:
+          type: string
+        valueUsd:
+          type: number
+        percent:
+          type: number
+      required: [label, valueUsd, percent]
+
+    PortfolioInsights:
+      type: object
+      properties:
+        overallRisk:
+          type: string
+          enum: [low, moderate, high, very_high]
+        diversificationScore:
+          type: integer
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        overexposedSectors:
+          type: array
+          items:
+            type: string
+        opportunities:
+          type: array
+          items:
+            type: string
+        rebalancingSuggestions:
+          type: array
+          items:
+            type: string
+        generatedAt:
+          type: string
+      required: [overallRisk, diversificationScore, strengths, weaknesses, overexposedSectors, opportunities, rebalancingSuggestions, generatedAt]
+
+    NewsItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        source:
+          type: string
+        url:
+          type: string
+        summary:
+          type: ["string", "null"]
+        sentiment:
+          type: string
+          enum: [bullish, bearish, neutral]
+        relatedSymbols:
+          type: array
+          items:
+            type: string
+        publishedAt:
+          type: string
+      required: [id, title, source, url, sentiment, relatedSymbols, publishedAt]
