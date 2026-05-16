@@ -3,30 +3,54 @@ import { logger } from "./logger.js";
 const CG_BASE = "https://api.coingecko.com/api/v3";
 const ALT_BASE = "https://api.alternative.me";
 
-// ── In-memory cache ────────────────────────────────────────────────────────────
+// ── In-memory cache (fresh + stale windows, deduped in-flight) ─────────────────
 
 interface CacheEntry {
   data: unknown;
-  expiresAt: number;
+  freshUntil: number;
+  staleUntil: number;
 }
 
 const cache = new Map<string, CacheEntry>();
+const inflight = new Map<string, Promise<unknown>>();
+const FETCH_TIMEOUT_MS = 5_000;
 
-function getCache<T>(key: string): T | null {
+function getEntry<T>(key: string): { data: T; isFresh: boolean; isStale: boolean } | null {
   const entry = cache.get(key);
   if (!entry) return null;
-  if (Date.now() > entry.expiresAt) {
+  const now = Date.now();
+  if (now > entry.staleUntil) {
     cache.delete(key);
     return null;
   }
-  return entry.data as T;
+  return {
+    data: entry.data as T,
+    isFresh: now < entry.freshUntil,
+    isStale: now >= entry.freshUntil,
+  };
 }
 
-function setCache(key: string, data: unknown, ttlMs: number): void {
-  cache.set(key, { data, expiresAt: Date.now() + ttlMs });
+function setCache(key: string, data: unknown, freshMs: number, staleMs: number): void {
+  const now = Date.now();
+  cache.set(key, { data, freshUntil: now + freshMs, staleUntil: now + staleMs });
 }
 
-async function cgFetch<T>(path: string, ttlMs: number, params?: Record<string, string>): Promise<T> {
+async function fetchJson(url: string): Promise<unknown> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const r = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { Accept: "application/json", "User-Agent": "CoinAstra/1.0" },
+    });
+    if (!r.ok) throw new Error(`CoinGecko ${r.status}: ${url}`);
+    return r.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function cgFetch<T>(path: string, freshMs: number, params?: Record<string, string>, staleMs?: number): Promise<T> {
   const url = new URL(`${CG_BASE}${path}`);
   if (params) {
     for (const [k, v] of Object.entries(params)) {
@@ -34,55 +58,70 @@ async function cgFetch<T>(path: string, ttlMs: number, params?: Record<string, s
     }
   }
   const key = url.toString();
+  const stale = staleMs ?? freshMs * 4;
+  const hit = getEntry<T>(key);
 
-  const cached = getCache<T>(key);
-  if (cached !== null) return cached;
-
-  const r = await fetch(url.toString(), {
-    headers: {
-      "Accept": "application/json",
-      "User-Agent": "CoinAstra/1.0",
-    },
-  });
-
-  if (!r.ok) {
-    throw new Error(`CoinGecko ${r.status}: ${path}`);
+  if (hit?.isFresh) return hit.data;
+  if (hit?.isStale && !inflight.has(key)) {
+    const bg = fetchJson(key)
+      .then((data) => {
+        setCache(key, data, freshMs, stale);
+        return data as T;
+      })
+      .catch((err) => {
+        logger.warn({ err, key }, "CoinGecko background revalidate failed");
+        return hit.data;
+      })
+      .finally(() => inflight.delete(key));
+    inflight.set(key, bg);
+    return hit.data;
   }
+  if (inflight.has(key)) return inflight.get(key) as Promise<T>;
 
-  const data = await r.json() as T;
-  setCache(key, data, ttlMs);
-  return data;
+  const p = fetchJson(key)
+    .then((data) => {
+      setCache(key, data, freshMs, stale);
+      return data as T;
+    })
+    .catch((err) => {
+      if (hit) return hit.data;
+      throw err;
+    })
+    .finally(() => inflight.delete(key));
+  inflight.set(key, p);
+  return p;
 }
 
-async function altFetch<T>(path: string, ttlMs: number): Promise<T> {
+async function altFetch<T>(path: string, freshMs: number, staleMs?: number): Promise<T> {
   const key = `alt:${path}`;
-  const cached = getCache<T>(key);
-  if (cached !== null) return cached;
+  const stale = staleMs ?? freshMs * 4;
+  const hit = getEntry<T>(key);
+  if (hit?.isFresh) return hit.data;
+  if (hit?.isStale) return hit.data;
 
   const r = await fetch(`${ALT_BASE}${path}`, {
-    headers: { "Accept": "application/json" },
+    headers: { Accept: "application/json" },
   });
-
   if (!r.ok) throw new Error(`alternative.me ${r.status}`);
   const data = await r.json() as T;
-  setCache(key, data, ttlMs);
+  setCache(key, data, freshMs, stale);
   return data;
 }
 
 // ── Public API ─────────────────────────────────────────────────────────────────
 
 const TTL = {
-  MARKETS: 30_000,       // 30s — live prices
-  PRICE_BATCH: 30_000,  // 30s — /simple/price by ids (rate-limit friendly)
-  TRENDING: 300_000,     // 5min
-  SEARCH: 300_000,       // 5min
-  COIN: 60_000,          // 60s
-  CHART: 300_000,        // 5min
-  OHLC: 300_000,         // 5min
-  FEAR_GREED: 600_000,   // 10min
-  GLOBAL: 60_000,        // 60s
-  CATEGORIES: 600_000,   // 10min — categories rarely change
-  CAT_COINS: 60_000,     // 60s — coin prices update
+  MARKETS: 30_000,
+  PRICE_BATCH: 30_000,
+  TRENDING: 300_000,
+  SEARCH: 300_000,
+  COIN: 300_000,        // 5min — coin details
+  CHART: 300_000,
+  OHLC: 300_000,
+  FEAR_GREED: 600_000,
+  GLOBAL: 60_000,
+  CATEGORIES: 3_600_000, // 1h
+  CAT_COINS: 30_000,
 };
 
 export interface CoinMarket {
@@ -187,6 +226,8 @@ export interface MarketsQueryOpts {
   sparkline?: boolean;
   /** CoinGecko `price_change_percentage` param, e.g. `1h,7d,30d` */
   priceChangePercentage?: string;
+  /** CoinGecko markets order, e.g. `market_cap_desc`, `created_desc` */
+  order?: string;
 }
 
 /** Live USD fields from /simple/price for a set of coin ids (max ~200 per HTTP call). */
@@ -232,6 +273,25 @@ export async function getSimplePricesBatched(allIds: string[], concurrency = 2):
   return out;
 }
 
+/** Market rows for specific coin ids (lightweight vs /coins/{id}). */
+export async function getCoinsMarketsByIds(
+  ids: string[],
+  opts?: MarketsQueryOpts,
+): Promise<CoinMarket[]> {
+  const uniq = [...new Set(ids.map((id) => id.trim().toLowerCase()).filter(Boolean))];
+  if (uniq.length === 0) return [];
+  const params: Record<string, string> = {
+    vs_currency: "usd",
+    ids: uniq.slice(0, 250).join(","),
+    order: "market_cap_desc",
+    per_page: String(Math.min(uniq.length, 250)),
+    page: "1",
+    sparkline: opts?.sparkline === true ? "true" : "false",
+    price_change_percentage: opts?.priceChangePercentage ?? "1h,7d,30d",
+  };
+  return cgFetch<CoinMarket[]>("/coins/markets", TTL.MARKETS, params);
+}
+
 /** Top coins by market cap, paginated (max 250 per call on free tier) */
 export async function getCoinsMarkets(
   page = 1,
@@ -241,7 +301,7 @@ export async function getCoinsMarkets(
 ): Promise<CoinMarket[]> {
   const params: Record<string, string> = {
     vs_currency: "usd",
-    order: "market_cap_desc",
+    order: opts?.order ?? "market_cap_desc",
     per_page: String(Math.min(perPage, 250)),
     page: String(page),
     sparkline: opts?.sparkline === false ? "false" : "true",
@@ -256,11 +316,13 @@ export async function searchCoins(query: string): Promise<{ coins: { id: string;
   return cgFetch("/search", TTL.SEARCH, { query });
 }
 
+export type CoinDetailsOpts = { includeTickers?: boolean };
+
 /** Single coin detailed data */
-export async function getCoinDetails(id: string): Promise<CoinDetails> {
+export async function getCoinDetails(id: string, opts?: CoinDetailsOpts): Promise<CoinDetails> {
   return cgFetch<CoinDetails>(`/coins/${encodeURIComponent(id)}`, TTL.COIN, {
     localization: "false",
-    tickers: "false",
+    tickers: opts?.includeTickers ? "true" : "false",
     market_data: "true",
     community_data: "true",
     developer_data: "false",
@@ -268,12 +330,24 @@ export async function getCoinDetails(id: string): Promise<CoinDetails> {
   });
 }
 
-/** Price chart — [timestamp, price] pairs */
-export async function getCoinChart(id: string, days: number): Promise<{ prices: [number, number][]; market_caps: [number, number][]; total_volumes: [number, number][] }> {
+/** Price chart — [timestamp, price] pairs. `days` may be `max` for full history (CoinGecko). */
+export async function getCoinChart(
+  id: string,
+  days: number | "max",
+): Promise<{ prices: [number, number][]; market_caps: [number, number][]; total_volumes: [number, number][] }> {
+  const daysParam = days === "max" ? "max" : String(days);
+  const d = days === "max" ? 365 : days;
   return cgFetch(`/coins/${encodeURIComponent(id)}/market_chart`, TTL.CHART, {
     vs_currency: "usd",
-    days: String(days),
-    interval: days <= 1 ? "hourly" : days <= 90 ? "daily" : "daily",
+    days: daysParam,
+    interval:
+      days === "max"
+        ? "daily"
+        : d <= 1
+          ? "hourly"
+          : d <= 90
+            ? "daily"
+            : "daily",
   });
 }
 
@@ -338,14 +412,20 @@ export async function getCoinsByCategory(
   });
 }
 
-/** Find a coin ID by symbol (searches and picks best match) */
-export async function getCoinIdBySymbol(symbol: string): Promise<string | null> {
+/** Find a coin ID by symbol — prefers highest market_cap_rank. */
+export async function getCoinIdBySymbol(symbol: string, preferredId?: string): Promise<string | null> {
+  if (preferredId) return preferredId.toLowerCase();
   try {
     const result = await searchCoins(symbol);
-    const match = result.coins.find(
-      (c) => c.symbol.toLowerCase() === symbol.toLowerCase()
-    );
-    return match?.id ?? null;
+    const sym = symbol.toLowerCase();
+    const exact = result.coins.filter((c) => c.symbol.toLowerCase() === sym);
+    if (exact.length === 0) return null;
+    exact.sort((a, b) => {
+      const ar = a.market_cap_rank ?? 999_999;
+      const br = b.market_cap_rank ?? 999_999;
+      return ar - br;
+    });
+    return exact[0]?.id ?? null;
   } catch (err) {
     logger.warn({ err, symbol }, "getCoinIdBySymbol failed");
     return null;

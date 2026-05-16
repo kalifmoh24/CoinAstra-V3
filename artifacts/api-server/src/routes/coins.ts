@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import {
   getCoinsMarkets,
+  getCoinsMarketsByIds,
   searchCoins,
   getCoinDetails,
   getCoinChart,
@@ -34,6 +35,25 @@ router.get("/coins/market-prices", async (req, res, next): Promise<void> => {
   }
 });
 
+/** GET /api/coins/markets-by-ids?ids=bitcoin,ethereum */
+router.get("/coins/markets-by-ids", async (req, res, next): Promise<void> => {
+  try {
+    const raw = String(req.query["ids"] ?? "");
+    const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    if (ids.length === 0) {
+      res.json([]);
+      return;
+    }
+    const pricePct = req.query["price_change_percentage"]
+      ? String(req.query["price_change_percentage"])
+      : "1h,7d,30d";
+    const data = await getCoinsMarketsByIds(ids, { sparkline: false, priceChangePercentage: pricePct });
+    res.json(data);
+  } catch (err) {
+    next(err);
+  }
+});
+
 /** GET /api/coins/markets?page=1&per_page=100&category=defi&sparkline=true&price_change_percentage=7d,30d */
 router.get("/coins/markets", async (req, res, next): Promise<void> => {
   try {
@@ -44,9 +64,11 @@ router.get("/coins/markets", async (req, res, next): Promise<void> => {
     const pricePct = req.query["price_change_percentage"]
       ? String(req.query["price_change_percentage"])
       : undefined;
+    const order = req.query["order"] ? String(req.query["order"]) : undefined;
     const data = await getCoinsMarkets(page, perPage, category, {
       sparkline,
       priceChangePercentage: pricePct,
+      order,
     });
     res.json(data);
   } catch (err) {
@@ -129,22 +151,24 @@ router.get("/coins/categories/:id/coins", async (req, res, next): Promise<void> 
   }
 });
 
-/** GET /api/coins/:id — full coin detail */
+/** GET /api/coins/:id — full coin detail (?tickers=1 for exchange listings) */
 router.get("/coins/:id", async (req, res, next): Promise<void> => {
   try {
     const id = String(req.params["id"]).toLowerCase();
-    const data = await getCoinDetails(id);
+    const includeTickers = String(req.query["tickers"] ?? "") === "1";
+    const data = await getCoinDetails(id, { includeTickers });
     res.json(data);
   } catch (err) {
     next(err);
   }
 });
 
-/** GET /api/coins/:id/chart?days=7 */
+/** GET /api/coins/:id/chart?days=7|max */
 router.get("/coins/:id/chart", async (req, res, next): Promise<void> => {
   try {
     const id = String(req.params["id"]).toLowerCase();
-    const days = Math.min(365, Math.max(1, Number(req.query["days"]) || 7));
+    const raw = String(req.query["days"] ?? "7").toLowerCase();
+    const days = raw === "max" ? "max" : Math.min(365, Math.max(1, Number(req.query["days"]) || 7));
     const data = await getCoinChart(id, days);
     res.json(data);
   } catch (err) {

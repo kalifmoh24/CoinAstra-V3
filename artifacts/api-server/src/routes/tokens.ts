@@ -4,7 +4,10 @@ import {
   getCoinDetails,
   getCoinIdBySymbol,
   getCoinsMarkets,
+  getCoinsMarketsByIds,
+  getSimplePricesForIds,
   type CoinDetails,
+  type CoinMarket,
 } from "../lib/coingecko.js";
 import { memoryStore, type MemoryImportedToken } from "../lib/memory-store.js";
 import {
@@ -33,6 +36,35 @@ function numIdFromCg(cgId: string): number {
   let h = 0;
   for (let i = 0; i < cgId.length; i++) h = (Math.imul(31, h) + cgId.charCodeAt(i)) | 0;
   return Math.abs(h) || 1;
+}
+
+function buildLiveFromMarket(cgId: string, m: CoinMarket, quote?: { usd?: number; usd_24h_change?: number }) {
+  const price = quote?.usd ?? m.current_price;
+  const ch24 = quote?.usd_24h_change ?? m.price_change_percentage_24h;
+  return {
+    id: cgId,
+    symbol: m.symbol.toUpperCase(),
+    name: m.name,
+    image: m.image,
+    rank: m.market_cap_rank,
+    price,
+    priceChange24h: ch24,
+    priceChange7d: m.price_change_percentage_7d_in_currency ?? 0,
+    priceChange30d: 0,
+    priceChange1y: 0,
+    marketCap: m.market_cap,
+    volume24h: m.total_volume,
+    fdv: m.fully_diluted_valuation,
+    high24h: m.high_24h,
+    low24h: m.low_24h,
+    ath: m.ath,
+    athChange: m.ath_change_percentage,
+    athDate: "",
+    circulatingSupply: m.circulating_supply,
+    totalSupply: m.total_supply,
+    maxSupply: m.max_supply,
+    categories: [] as string[],
+  };
 }
 
 function buildLivePayload(cgId: string, details: CoinDetails) {
@@ -301,16 +333,33 @@ router.get("/tokens/:symbol/live", async (req, res, next): Promise<void> => {
   try {
     const raw = Array.isArray(req.params.symbol) ? req.params.symbol[0] : req.params.symbol;
     const symbol = raw.toUpperCase();
+    const preferredId = typeof req.query["id"] === "string" ? req.query["id"] : undefined;
+    const full = String(req.query["full"] ?? "") === "1";
 
     const mem = memoryStore.importedTokens.find((t) => t.symbol === symbol);
-    let cgId = mem?.coingeckoId ?? null;
-    if (!cgId) cgId = await getCoinIdBySymbol(symbol);
+    let cgId = preferredId ?? mem?.coingeckoId ?? null;
+    if (!cgId) cgId = await getCoinIdBySymbol(symbol, preferredId);
     if (!cgId) {
       res.status(404).json({ error: "CoinGecko ID not found for this token" });
       return;
     }
-    const details = await getCoinDetails(cgId);
-    res.json(buildLivePayload(cgId, details));
+
+    if (full) {
+      const details = await getCoinDetails(cgId);
+      res.json(buildLivePayload(cgId, details));
+      return;
+    }
+
+    const [markets, quotes] = await Promise.all([
+      getCoinsMarketsByIds([cgId], { sparkline: false, priceChangePercentage: "1h,7d,30d" }),
+      getSimplePricesForIds([cgId]),
+    ]);
+    const m = markets[0];
+    if (!m) {
+      res.status(404).json({ error: "Market data not found" });
+      return;
+    }
+    res.json(buildLiveFromMarket(cgId, m, quotes[cgId]));
   } catch (err) {
     next(err);
   }

@@ -443,18 +443,17 @@ export default function Narratives() {
       const coins = def.coinIds
         .map(id => {
           const live = coinMap.get(id);
-          const fb = FALLBACK[id];
-          if (!live && !fb) return null;
+          if (!live) return null;
           return {
             id,
-            symbol: live?.symbol ?? id,
-            name: live?.name ?? id,
-            image: live?.image ?? "",
-            price: live?.current_price ?? fb?.price ?? 0,
-            ch24: live?.price_change_percentage_24h ?? fb?.ch24 ?? 0,
-            ch7d: live?.price_change_percentage_7d_in_currency ?? fb?.ch7d ?? 0,
-            mcap: live?.market_cap ?? (fb ? fb.mcap : 0),
-            volume24h: live?.total_volume ?? 0,
+            symbol: live.symbol.toUpperCase(),
+            name: live.name,
+            image: live.image,
+            price: live.current_price,
+            ch24: live.price_change_percentage_24h,
+            ch7d: live.price_change_percentage_7d_in_currency ?? 0,
+            mcap: live.market_cap,
+            volume24h: live.total_volume,
           };
         })
         .filter(Boolean) as SectorData["coins"];

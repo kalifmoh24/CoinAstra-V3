@@ -38,8 +38,8 @@ export function MobileNav() {
                 <Link
                   key={tab.path}
                   href={tab.path}
-                  className="flex flex-col items-center gap-0.5 relative select-none"
-                  style={{ minWidth: 42 }}
+                  className="flex flex-col items-center justify-center gap-0.5 relative select-none touch-manipulation active:opacity-80"
+                  style={{ minWidth: 48, minHeight: 48 }}
                 >
                   <div className="relative flex items-center justify-center" style={{ width: 40, height: 32 }}>
                     {isActive && (

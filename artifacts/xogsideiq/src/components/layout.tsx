@@ -15,6 +15,7 @@ import { GlobalTicker } from "@/components/global-ticker";
 import { useTheme } from "@/components/theme-provider";
 import { useFearGreedLive, useLiveCoins } from "@/hooks/use-market-data";
 import { useGetMarketOverview, getGetMarketOverviewQueryKey } from "@workspace/api-client-react";
+import { researchHref } from "@/lib/research-url";
 
 async function fetchCoinSearch(q: string) {
   const res = await fetch(`/api/coins/search?q=${encodeURIComponent(q)}`);
@@ -234,7 +235,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       {coinResults.slice(0, 8).map((coin, i) => (
                         <div key={coin.id}
                           className="flex items-center gap-3 px-3 py-2 transition-all cursor-pointer hover:bg-white/[0.04]"
-                          onClick={() => { setLocation(`/research/${coin.symbol.toUpperCase()}`); setSearchOpen(false); setSearchQuery(""); }}>
+                          onClick={() => { setLocation(researchHref({ id: coin.id, symbol: coin.symbol })); setSearchOpen(false); setSearchQuery(""); }}>
                           <img src={coin.thumb} alt={coin.name} className="w-6 h-6 rounded-full shrink-0"
                             onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                           <div className="flex-1 min-w-0">
@@ -433,7 +434,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </motion.aside>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto pb-24 md:pb-4">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 md:pb-4 ca-minw-0">
           {children}
         </main>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { Search, SlidersHorizontal, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { useLiveCoins, type LiveCoin } from "@/hooks/use-market-data";
 import { useCoinSearch, type CoinSearchResult } from "@/hooks/use-coins";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useBatchPrices } from "@/hooks/use-batch-prices";
+import { dedupeById } from "@/lib/dedupe-coins";
+import { researchHref } from "@/lib/research-url";
 
 function mapSearchToRows(coins: CoinSearchResult[]): LiveCoin[] {
   return coins.map((c) => ({
@@ -36,27 +40,42 @@ function mapSearchToRows(coins: CoinSearchResult[]): LiveCoin[] {
 export default function Research() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
-  const [debounced, setDebounced] = useState("");
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(search.trim()), 300);
-    return () => clearTimeout(t);
-  }, [search]);
+  const debounced = useDebouncedValue(search.trim(), 280);
 
   const { data: liveCoins, isLoading: liveLoading } = useLiveCoins(1, 250);
   const { data: searchData, isFetching: searchFetching } = useCoinSearch(debounced.length >= 2 ? debounced : "");
 
+  const searchIds = useMemo(
+    () => (debounced.length >= 2 && searchData?.coins?.length ? searchData.coins.map((c) => c.id) : []),
+    [debounced, searchData],
+  );
+  const { data: searchPrices } = useBatchPrices(searchIds, searchIds.length > 0);
+
   const rows = useMemo(() => {
+    let list: LiveCoin[] = [];
     if (debounced.length >= 2 && searchData?.coins?.length) {
-      return mapSearchToRows(searchData.coins);
+      list = mapSearchToRows(searchData.coins).map((c) => {
+        const q = searchPrices?.[c.id];
+        if (!q?.usd) return c;
+        return {
+          ...c,
+          current_price: q.usd,
+          market_cap: q.usd_market_cap ?? c.market_cap,
+          total_volume: q.usd_24h_vol ?? c.total_volume,
+          price_change_percentage_24h: q.usd_24h_change ?? c.price_change_percentage_24h,
+        };
+      });
+    } else {
+      list = liveCoins ?? [];
+      if (debounced) {
+        const q = debounced.toLowerCase();
+        list = list.filter(
+          (c) => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q) || c.id.toLowerCase().includes(q),
+        );
+      }
     }
-    const list = liveCoins ?? [];
-    if (!debounced) return list;
-    const q = debounced.toLowerCase();
-    return list.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q) || c.id.toLowerCase().includes(q),
-    );
-  }, [debounced, liveCoins, searchData]);
+    return dedupeById(list);
+  }, [debounced, liveCoins, searchData, searchPrices]);
 
   const isLoading = debounced.length >= 2 ? searchFetching : liveLoading;
 
@@ -132,7 +151,7 @@ export default function Research() {
             ) : (
               rows.map((token) => {
                 const fromSearch = debounced.length >= 2 && (searchData?.coins?.length ?? 0) > 0;
-                const href = `/research/${token.symbol.toUpperCase()}`;
+                const href = researchHref({ id: token.id, symbol: token.symbol });
                 return (
                   <tr
                     key={`${token.id}-${token.symbol}`}

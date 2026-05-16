@@ -1,4 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import { readChartCache, writeChartCache, type CachedLineChart } from "@/lib/coin-detail-persist";
 
 // ── Coin search ────────────────────────────────────────────────────────────────
 
@@ -69,13 +71,17 @@ export interface CoinLiveData {
     explorers?: string[];
   };
   description?: string;
+  /** Top exchange listings from CoinGecko tickers */
+  exchanges?: { name: string; pair: string; volume?: number }[];
+  trendingScore?: string;
 }
 
-export function useTokenLive(symbol: string | undefined) {
+export function useTokenLive(symbol: string | undefined, coinId?: string | null) {
   return useQuery<CoinLiveData>({
-    queryKey: ["ca-token-live", symbol],
+    queryKey: ["ca-token-live", symbol, coinId],
     queryFn: async () => {
-      const r = await fetch(`/api/tokens/${symbol}/live`);
+      const qs = coinId ? `?id=${encodeURIComponent(coinId)}` : "";
+      const r = await fetch(`/api/tokens/${symbol}/live${qs}`);
       if (!r.ok) throw new Error(`token live ${r.status}`);
       return r.json();
     },
@@ -83,6 +89,7 @@ export function useTokenLive(symbol: string | undefined) {
     refetchInterval: 30_000,
     staleTime: 25_000,
     retry: 2,
+    placeholderData: (prev) => prev,
   });
 }
 
@@ -110,6 +117,57 @@ export interface ChartData {
   total_volumes: [number, number][];
 }
 
+/** UI chart range — maps to CoinGecko `market_chart` / `ohlc` params */
+export type ChartTimeframeKey = "1h" | "24h" | "7d" | "1m" | "3m" | "1y" | "all";
+
+export function chartLineDaysParam(tf: ChartTimeframeKey): number | "max" {
+  switch (tf) {
+    case "1h":
+    case "24h":
+      return 1;
+    case "7d":
+      return 7;
+    case "1m":
+      return 30;
+    case "3m":
+      return 90;
+    case "1y":
+      return 365;
+    case "all":
+      return "max";
+  }
+}
+
+/** CoinGecko OHLC only supports discrete day counts — cap “all” at 365 */
+export function chartOhlcDaysParam(tf: ChartTimeframeKey): number {
+  const d = chartLineDaysParam(tf);
+  return d === "max" ? 365 : d;
+}
+
+/** Trim intraday chart to recent window (CoinGecko hourly when days=1). */
+export function sliceChartForDisplay(raw: ChartData | undefined, tf: ChartTimeframeKey): ChartData | undefined {
+  if (!raw?.prices?.length) return raw;
+  if (tf !== "1h") return raw;
+  const cutoff = Date.now() - 3 * 3_600_000;
+  const prices = raw.prices.filter(([t]) => t >= cutoff);
+  const market_caps = raw.market_caps?.filter(([t]) => t >= cutoff);
+  const total_volumes = raw.total_volumes?.filter(([t]) => t >= cutoff);
+  if (prices.length < 2) return raw;
+  return {
+    prices,
+    market_caps: market_caps?.length ? market_caps : raw.market_caps,
+    total_volumes: total_volumes?.length ? total_volumes : raw.total_volumes,
+  };
+}
+
+export function sliceOhlcForDisplay(ohlc: number[][] | undefined, tf: ChartTimeframeKey): number[][] | undefined {
+  if (!ohlc?.length) return ohlc;
+  if (tf !== "1h") return ohlc;
+  const cutoff = Date.now() - 3 * 3_600_000;
+  const out = ohlc.filter((row) => row[0] >= cutoff);
+  return out.length >= 2 ? out : ohlc;
+}
+
 /** Fetch chart via backend token endpoint (resolves coingeckoId automatically) */
 export function useTokenChart(symbol: string | undefined, days: number) {
   return useQuery<ChartData>({
@@ -125,35 +183,98 @@ export function useTokenChart(symbol: string | undefined, days: number) {
   });
 }
 
-/** Fetch chart directly by CoinGecko ID */
-export function useCoinChart(coinId: string | undefined, days: number) {
+/** Fetch chart directly by CoinGecko ID — persists to IndexedDB; hydrates cache into React Query. */
+export function useCoinChart(coinId: string | undefined, tf: ChartTimeframeKey, symbol?: string) {
+  const qc = useQueryClient();
+  const normalizedId = coinId?.toLowerCase();
+  const daysParam = chartLineDaysParam(tf);
+  const cacheKey = daysParam === "max" ? "max" : daysParam;
+  const qk = useMemo(() => ["ca-coin-chart", normalizedId, tf] as const, [normalizedId, tf]);
+
+  useEffect(() => {
+    if (!normalizedId) return;
+    let cancelled = false;
+    void readChartCache(normalizedId, "line", cacheKey).then((raw) => {
+      if (cancelled || raw == null || !Array.isArray((raw as CachedLineChart).prices)) return;
+      const data = raw as CachedLineChart;
+      if (data.prices.length < 2) return;
+      const existing = qc.getQueryData<ChartData>(qk);
+      if (!existing) qc.setQueryData(qk, data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [normalizedId, cacheKey, qc, qk]);
+
   return useQuery<ChartData>({
-    queryKey: ["ca-coin-chart", coinId, days],
+    queryKey: qk,
     queryFn: async () => {
-      const r = await fetch(`/api/coins/${coinId}/chart?days=${days}`);
+      if (!normalizedId) throw new Error("missing coin id");
+      const qs = daysParam === "max" ? "max" : String(daysParam);
+      const sym = symbol?.trim().toUpperCase();
+      let r = await fetch(`/api/coins/${encodeURIComponent(normalizedId)}/chart?days=${qs}`);
+      if (!r.ok && sym) {
+        const dayNum = daysParam === "max" ? 365 : daysParam;
+        r = await fetch(`/api/tokens/${encodeURIComponent(sym)}/chart?days=${dayNum}`);
+      }
       if (!r.ok) throw new Error(`chart ${r.status}`);
-      return r.json();
+      const data = (await r.json()) as ChartData;
+      void writeChartCache(normalizedId, "line", cacheKey, data);
+      return data;
     },
-    enabled: !!coinId,
-    staleTime: 300_000,
-    retry: 2,
+    enabled: !!normalizedId,
+    staleTime: 25_000,
+    refetchInterval: 30_000,
+    refetchOnReconnect: true,
+    gcTime: 3_600_000,
+    retry: 6,
+    retryDelay: (n) => Math.min(2_000 * 2 ** n, 45_000),
+    placeholderData: (prev) => prev,
   });
 }
 
 // ── OHLC candlestick data ──────────────────────────────────────────────────────
 
 /** [timestamp_ms, open, high, low, close][] — for candlestick charts */
-export function useCoinOHLC(coinId: string | undefined, days: number) {
+export function useCoinOHLC(coinId: string | undefined, tf: ChartTimeframeKey) {
+  const qc = useQueryClient();
+  const normalizedId = coinId?.toLowerCase();
+  const days = chartOhlcDaysParam(tf);
+  const qk = useMemo(() => ["ca-coin-ohlc", normalizedId, tf] as const, [normalizedId, tf]);
+
+  useEffect(() => {
+    if (!normalizedId) return;
+    let cancelled = false;
+    void readChartCache(normalizedId, "ohlc", days).then((raw) => {
+      if (cancelled || raw == null || !Array.isArray(raw)) return;
+      const data = raw as number[][];
+      if (data.length < 2) return;
+      const existing = qc.getQueryData<number[][]>(qk);
+      if (!existing) qc.setQueryData(qk, data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [normalizedId, days, qc, qk]);
+
   return useQuery<number[][]>({
-    queryKey: ["ca-coin-ohlc", coinId, days],
+    queryKey: qk,
     queryFn: async () => {
-      const r = await fetch(`/api/coins/${coinId}/ohlc?days=${days}`);
+      if (!normalizedId) throw new Error("missing coin id");
+      const r = await fetch(`/api/coins/${encodeURIComponent(normalizedId)}/ohlc?days=${days}`);
       if (!r.ok) throw new Error(`ohlc ${r.status}`);
-      return r.json();
+      const data = (await r.json()) as number[][];
+      void writeChartCache(normalizedId, "ohlc", days, data);
+      return data;
     },
-    enabled: !!coinId,
-    staleTime: 300_000,
-    retry: 2,
+    enabled: !!normalizedId,
+    staleTime: 25_000,
+    refetchInterval: 30_000,
+    refetchOnReconnect: true,
+    gcTime: 3_600_000,
+    retry: 6,
+    retryDelay: (n) => Math.min(2_000 * 2 ** n, 45_000),
+    placeholderData: (prev) => prev,
   });
 }
 

@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
+    "generate:metadata": "node ../../scripts/generate-coins-market-metadata.mjs",
+    "prebuild": "node ../../scripts/generate-coins-market-metadata.mjs",
     "build": "vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -83,6 +85,6 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "lightweight-charts": "^5.2.0"
+    "zustand": "^5.0.3"
   }
 }

@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { LayoutGrid, TrendingUp, TrendingDown, RefreshCw, Activity } from "lucide-react";
 import { useLiveCoins } from "@/hooks/use-market-data";
 import type { LiveCoin } from "@/hooks/use-market-data";
+import { researchHref } from "@/lib/research-url";
 
 /* ── Types ──────────────────────────────────────────────────────────────────── */
 
@@ -72,60 +73,9 @@ const SECTOR_META: Record<string, { color: string; darkColor: string; order: num
   "Stables": { color: "#5a6072", darkColor: "#1a1e28", order: 8 },
 };
 
-/* ── Static fallback data (top 50 coins) ────────────────────────────────────── */
-
-const STATIC_COINS: HeatCoin[] = [
-  { id:"bitcoin",      symbol:"BTC",   name:"Bitcoin",       image:"https://assets.coingecko.com/coins/images/1/thumb/bitcoin.png",     price:81198,  ch24:-0.1,  ch7d:-2.1,  mcap:1610000, sector:"Layer 1" },
-  { id:"ethereum",     symbol:"ETH",   name:"Ethereum",      image:"https://assets.coingecko.com/coins/images/279/thumb/ethereum.png",   price:2305,   ch24:-0.3,  ch7d:-3.0,  mcap:277000,  sector:"Layer 1" },
-  { id:"tether",       symbol:"USDT",  name:"Tether",        image:"https://assets.coingecko.com/coins/images/325/thumb/Tether.png",     price:1.0,    ch24:0.01,  ch7d:0.02,  mcap:145000,  sector:"Stables" },
-  { id:"binancecoin",  symbol:"BNB",   name:"BNB",           image:"https://assets.coingecko.com/coins/images/825/thumb/bnb-icon2_2x.png",price:599,  ch24:0.2,   ch7d:1.8,   mcap:84000,   sector:"Layer 1" },
-  { id:"ripple",       symbol:"XRP",   name:"XRP",           image:"https://assets.coingecko.com/coins/images/44/thumb/xrp-symbol-white-128.png", price:2.14, ch24:1.1, ch7d:4.4, mcap:122000, sector:"Layer 1" },
-  { id:"usd-coin",     symbol:"USDC",  name:"USDC",          image:"https://assets.coingecko.com/coins/images/6319/thumb/usdc.png",      price:1.0,    ch24:0.01,  ch7d:0.01,  mcap:60000,   sector:"Stables" },
-  { id:"solana",       symbol:"SOL",   name:"Solana",        image:"https://assets.coingecko.com/coins/images/4128/thumb/solana.png",    price:95.61,  ch24:-0.8,  ch7d:-5.2,  mcap:46000,   sector:"Layer 1" },
-  { id:"dogecoin",     symbol:"DOGE",  name:"Dogecoin",      image:"https://assets.coingecko.com/coins/images/5/thumb/dogecoin.png",     price:0.168,  ch24:-2.1,  ch7d:-4.8,  mcap:24800,   sector:"Meme"    },
-  { id:"tron",         symbol:"TRX",   name:"TRON",          image:"https://assets.coingecko.com/coins/images/1094/thumb/tron-logo.png", price:0.244,  ch24:0.3,   ch7d:1.8,   mcap:21000,   sector:"Layer 1" },
-  { id:"cardano",      symbol:"ADA",   name:"Cardano",       image:"https://assets.coingecko.com/coins/images/975/thumb/cardano.png",    price:0.68,   ch24:-0.4,  ch7d:-1.2,  mcap:24000,   sector:"Layer 1" },
-  { id:"toncoin",      symbol:"TON",   name:"Toncoin",       image:"https://assets.coingecko.com/coins/images/17980/thumb/ton_symbol.png",price:3.12, ch24:0.9,   ch7d:3.4,   mcap:7900,    sector:"Layer 1" },
-  { id:"shiba-inu",    symbol:"SHIB",  name:"Shiba Inu",     image:"https://assets.coingecko.com/coins/images/11939/thumb/shiba.png",   price:0.0000138,ch24:-1.4,ch7d:-3.2,  mcap:8100,    sector:"Meme"    },
-  { id:"chainlink",    symbol:"LINK",  name:"Chainlink",     image:"https://assets.coingecko.com/coins/images/877/thumb/chainlink-new-logo.png", price:13.4, ch24:4.3, ch7d:12.1, mcap:8200, sector:"DeFi" },
-  { id:"avalanche-2",  symbol:"AVAX",  name:"Avalanche",     image:"https://assets.coingecko.com/coins/images/12559/thumb/Avalanche_Circle_RedWhite_Trans.png", price:20.4, ch24:0.8, ch7d:3.1, mcap:8400, sector:"Layer 1" },
-  { id:"sui",          symbol:"SUI",   name:"Sui",           image:"https://assets.coingecko.com/coins/images/26375/thumb/sui_asset.jpeg", price:2.48, ch24:2.1, ch7d:8.2, mcap:6200, sector:"Layer 1" },
-  { id:"polkadot",     symbol:"DOT",   name:"Polkadot",      image:"https://assets.coingecko.com/coins/images/12171/thumb/polkadot.png", price:4.12, ch24:-0.6, ch7d:-2.4, mcap:6300, sector:"Layer 1" },
-  { id:"near",         symbol:"NEAR",  name:"NEAR Protocol", image:"https://assets.coingecko.com/coins/images/10365/thumb/near.jpg", price:2.46, ch24:1.4, ch7d:5.2, mcap:2900, sector:"Layer 1" },
-  { id:"uniswap",      symbol:"UNI",   name:"Uniswap",       image:"https://assets.coingecko.com/coins/images/12504/thumb/uniswap-uni.png", price:6.12, ch24:2.1, ch7d:8.4, mcap:3700, sector:"DeFi" },
-  { id:"aptos",        symbol:"APT",   name:"Aptos",         image:"https://assets.coingecko.com/coins/images/26455/thumb/aptos_round.png", price:5.44, ch24:1.2, ch7d:4.8, mcap:2800, sector:"Layer 1" },
-  { id:"pepe",         symbol:"PEPE",  name:"Pepe",          image:"https://assets.coingecko.com/coins/images/29850/thumb/pepe-token.jpeg", price:0.0000082, ch24:0.8, ch7d:2.4, mcap:3460, sector:"Meme" },
-  { id:"bittensor",    symbol:"TAO",   name:"Bittensor",     image:"https://assets.coingecko.com/coins/images/28452/thumb/ARUsPeNQ_400x400.jpeg", price:328, ch24:5.4, ch7d:18.2, mcap:2100, sector:"AI" },
-  { id:"arbitrum",     symbol:"ARB",   name:"Arbitrum",      image:"https://assets.coingecko.com/coins/images/16547/thumb/photo_2023-03-29_21.47.00.jpeg", price:0.44, ch24:0.6, ch7d:3.1, mcap:1760, sector:"Layer 2" },
-  { id:"cosmos",       symbol:"ATOM",  name:"Cosmos",        image:"https://assets.coingecko.com/coins/images/1481/thumb/cosmos_hub.png", price:4.88, ch24:-0.2, ch7d:-1.1, mcap:1900, sector:"Layer 1" },
-  { id:"render-token", symbol:"RNDR",  name:"Render",        image:"https://assets.coingecko.com/coins/images/11636/thumb/rndr.png", price:4.12, ch24:3.1, ch7d:9.8, mcap:1980, sector:"AI" },
-  { id:"optimism",     symbol:"OP",    name:"Optimism",      image:"https://assets.coingecko.com/coins/images/25244/thumb/Optimism.png", price:0.88, ch24:1.2, ch7d:4.8, mcap:1170, sector:"Layer 2" },
-  { id:"matic-network",symbol:"POL",   name:"Polygon",       image:"https://assets.coingecko.com/coins/images/4713/thumb/matic-token-icon.png", price:0.28, ch24:-0.4, ch7d:2.2, mcap:2800, sector:"Layer 2" },
-  { id:"maker",        symbol:"MKR",   name:"Maker",         image:"https://assets.coingecko.com/coins/images/1364/thumb/Mark_Maker.png", price:1480, ch24:1.2, ch7d:4.8, mcap:1700, sector:"DeFi" },
-  { id:"aave",         symbol:"AAVE",  name:"Aave",          image:"https://assets.coingecko.com/coins/images/12645/thumb/AAVE.png", price:198, ch24:1.8, ch7d:7.2, mcap:3200, sector:"DeFi" },
-  { id:"the-graph",    symbol:"GRT",   name:"The Graph",     image:"https://assets.coingecko.com/coins/images/13397/thumb/Graph_Token.png", price:0.118, ch24:1.4, ch7d:4.8, mcap:1100, sector:"AI" },
-  { id:"bonk",         symbol:"BONK",  name:"Bonk",          image:"https://assets.coingecko.com/coins/images/28600/thumb/bonk.jpg", price:0.0000188, ch24:14.8, ch7d:42.1, mcap:1390, sector:"Meme" },
-  { id:"dogwifhat",    symbol:"WIF",   name:"dogwifhat",     image:"https://assets.coingecko.com/coins/images/33566/thumb/dogwifhat.jpg", price:0.82, ch24:7.6, ch7d:19.8, mcap:822, sector:"Meme" },
-  { id:"fetch-ai",     symbol:"FET",   name:"Fetch.ai",      image:"https://assets.coingecko.com/coins/images/5681/thumb/Fetch.jpg", price:1.24, ch24:4.2, ch7d:11.4, mcap:1060, sector:"AI" },
-  { id:"floki",        symbol:"FLOKI", name:"Floki",         image:"https://assets.coingecko.com/coins/images/16746/thumb/PNG_image.png", price:0.0000842, ch24:3.2, ch7d:8.4, mcap:800, sector:"Meme" },
-  { id:"injective-protocol",symbol:"INJ",name:"Injective",  image:"https://assets.coingecko.com/coins/images/12882/thumb/Secondary_Symbol.png", price:12.8, ch24:2.9, ch7d:7.4, mcap:1200, sector:"DeFi" },
-  { id:"the-sandbox",  symbol:"SAND",  name:"The Sandbox",  image:"https://assets.coingecko.com/coins/images/12129/thumb/sandbox_logo.jpg", price:0.288, ch24:-1.2, ch7d:-2.4, mcap:680, sector:"Gaming" },
-  { id:"axie-infinity",symbol:"AXS",   name:"Axie Infinity", image:"https://assets.coingecko.com/coins/images/13029/thumb/axie_infinity_logo.png", price:5.12, ch24:-0.8, ch7d:-1.8, mcap:840, sector:"Gaming" },
-  { id:"ondo-finance", symbol:"ONDO",  name:"Ondo Finance",  image:"https://assets.coingecko.com/coins/images/26580/thumb/ONDO.png", price:0.892, ch24:3.4, ch7d:12.4, mcap:1280, sector:"RWA" },
-  { id:"ronin",        symbol:"RON",   name:"Ronin",         image:"https://assets.coingecko.com/coins/images/20009/thumb/ronin.jpg", price:1.44, ch24:1.4, ch7d:4.8, mcap:780, sector:"Gaming" },
-  { id:"decentraland", symbol:"MANA",  name:"Decentraland",  image:"https://assets.coingecko.com/coins/images/878/thumb/decentraland-mana.png", price:0.308, ch24:-0.4, ch7d:-1.2, mcap:590, sector:"Gaming" },
-  { id:"singularitynet",symbol:"AGIX", name:"SingularityNET",image:"https://assets.coingecko.com/coins/images/2138/thumb/singularitynet.png", price:0.48, ch24:2.8, ch7d:8.2, mcap:640, sector:"AI" },
-  { id:"ocean-protocol",symbol:"OCEAN",name:"Ocean Protocol",image:"https://assets.coingecko.com/coins/images/3687/thumb/ocean-protocol-logo.jpg", price:0.68, ch24:2.1, ch7d:7.4, mcap:380, sector:"AI" },
-  { id:"curve-dao-token",symbol:"CRV", name:"Curve DAO",    image:"https://assets.coingecko.com/coins/images/12124/thumb/Curve.png", price:0.42, ch24:1.2, ch7d:3.4, mcap:520, sector:"DeFi" },
-  { id:"helium",       symbol:"HNT",   name:"Helium",        image:"https://assets.coingecko.com/coins/images/4284/thumb/Helium_HNT.png", price:4.22, ch24:2.8, ch7d:9.4, mcap:600, sector:"DePIN" },
-  { id:"gala",         symbol:"GALA",  name:"Gala",          image:"https://assets.coingecko.com/coins/images/12493/thumb/GALA-COINGECKO.png", price:0.022, ch24:0.8, ch7d:2.4, mcap:480, sector:"Gaming" },
-  { id:"pendle",       symbol:"PENDLE",name:"Pendle",        image:"https://assets.coingecko.com/coins/images/15069/thumb/Pendle_Logo_Normal-03.png", price:3.84, ch24:4.8, ch7d:16.9, mcap:520, sector:"DeFi" },
-  { id:"akash-network",symbol:"AKT",   name:"Akash Network", image:"https://assets.coingecko.com/coins/images/4618/thumb/akash-logo.png", price:2.84, ch24:3.8, ch7d:12.4, mcap:720, sector:"AI" },
-  { id:"iotex",        symbol:"IOTX",  name:"IoTeX",         image:"https://assets.coingecko.com/coins/images/3334/thumb/iotex-logo.png", price:0.054, ch24:1.8, ch7d:6.4, mcap:410, sector:"DePIN" },
-  { id:"flux",         symbol:"FLUX",  name:"Flux",          image:"https://assets.coingecko.com/coins/images/5163/thumb/Flux_symbol_blue-white.png", price:0.48, ch24:2.4, ch7d:8.2, mcap:300, sector:"DePIN" },
-  { id:"dydx",         symbol:"DYDX",  name:"dYdX",          image:"https://assets.coingecko.com/coins/images/17500/thumb/hjnIm9bV.jpg", price:0.74, ch24:2.1, ch7d:6.8, mcap:480, sector:"DeFi" },
-  { id:"gmx",          symbol:"GMX",   name:"GMX",           image:"https://assets.coingecko.com/coins/images/18323/thumb/arbit.png", price:18.4, ch24:2.1, ch7d:6.8, mcap:220, sector:"DeFi" },
-];
+function coinSector(id: string): string {
+  return COIN_SECTOR[id] ?? "Layer 1";
+}
 
 /* ── Treemap algorithm ──────────────────────────────────────────────────────── */
 
@@ -269,24 +219,19 @@ export default function Heatmap() {
     return () => ro.disconnect();
   }, []);
 
-  /* Merge live data with static fallback */
   const allCoins: HeatCoin[] = useMemo(() => {
-    if (!liveCoins?.length) return STATIC_COINS;
-    const liveMap = new Map(liveCoins.map((c: LiveCoin) => [c.id, c]));
-    return STATIC_COINS.map(fb => {
-      const live = liveMap.get(fb.id);
-      if (!live) return fb;
-      return {
-        ...fb,
-        price: live.current_price,
-        ch24:  live.price_change_percentage_24h,
-        ch7d:  live.price_change_percentage_7d_in_currency ?? fb.ch7d,
-        mcap:  live.market_cap / 1_000_000, // keep in millions for relative sizing
-        image: live.image,
-        name:  live.name,
-        symbol: live.symbol.toUpperCase(),
-      };
-    });
+    if (!liveCoins?.length) return [];
+    return liveCoins.slice(0, 100).map((live: LiveCoin) => ({
+      id: live.id,
+      symbol: live.symbol.toUpperCase(),
+      name: live.name,
+      image: live.image,
+      price: live.current_price,
+      ch24: live.price_change_percentage_24h,
+      ch7d: live.price_change_percentage_7d_in_currency ?? 0,
+      mcap: live.market_cap / 1_000_000,
+      sector: coinSector(live.id),
+    }));
   }, [liveCoins]);
 
   const getVal = (c: HeatCoin) =>
@@ -447,7 +392,7 @@ export default function Heatmap() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.18 }}
-              onClick={() => setLocation(`/research/${coin.symbol.toUpperCase()}`)}
+              onClick={() => setLocation(researchHref({ id: coin.id, symbol: coin.symbol }))}
               onMouseEnter={e => {
                 const rect = containerRef.current?.getBoundingClientRect();
                 if (rect) setHovered({ coin, x: e.clientX - rect.left, y: e.clientY - rect.top });

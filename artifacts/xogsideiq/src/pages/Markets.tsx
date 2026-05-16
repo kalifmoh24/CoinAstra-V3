@@ -11,6 +11,11 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useScreenSize } from "@/hooks/use-screen-size";
 import { useInfiniteSentinel, useOptimizedMarkets } from "@/hooks/use-optimized-markets";
+import { dedupeById } from "@/lib/dedupe-coins";
+import { ActionButton } from "@/components/action-button";
+import { VirtualCoinList } from "@/components/virtual-coin-list";
+import { useMarketStore } from "@/stores/market-store";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { MobileNav } from "@/components/mobile-nav";
 import { GlobalTicker } from "@/components/global-ticker";
 import { NotificationCenter } from "@/components/notification-center";
@@ -59,14 +64,20 @@ type SortDir = "asc" | "desc";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 // Maps display label → CoinGecko category ID (null = All)
+import { researchHref } from "@/lib/research-url";
+export { researchHref };
+
 const CATEGORY_MAP: Record<string, string | null> = {
   "All":           null,
+  "Trending":      "__trending__",
+  "New Listings":  "__new__",
   "DeFi":          "decentralized-finance-defi",
   "Layer 1":       "layer-1",
   "Layer 2":       "layer-2",
   "Meme":          "meme-token",
   "AI":            "artificial-intelligence",
   "Gaming":        "gaming",
+  "Solana":        "solana-ecosystem",
   "Stablecoins":   "stablecoins",
   "RWA":           "real-world-assets-rwa",
   "DePIN":         "decentralized-physical-infrastructure-networks-depin",
@@ -419,19 +430,13 @@ function MobileSkelRow({ i }: { i:number }) {
 
 // ─── Mobile: Coin Row ─────────────────────────────────────────────────────────
 
-function MobileCoinRow({ coin, idx, isWatched, onWatchlist }: {
-  coin:CoinMarket; idx:number; isWatched:boolean; onWatchlist:()=>void;
+function MobileCoinRow({ coin, idx, isWatched, onWatchlist, lite }: {
+  coin:CoinMarket; idx:number; isWatched:boolean; onWatchlist:()=>void; lite?:boolean;
 }) {
   const is24hPos = coin.price_change_percentage_24h >= 0;
   const is7dPos  = (coin.price_change_percentage_7d_in_currency ?? 0) >= 0;
-  return (
-    <motion.div
-      initial={{ opacity:0, x:-8 }}
-      animate={{ opacity:1, x:0 }}
-      transition={{ duration:0.12, delay:Math.min(idx*0.012, 0.35) }}
-      style={{ borderBottom:"1px solid rgba(255,255,255,0.04)" }}
-    >
-      <Link href={`/research/${coin.symbol.toUpperCase()}`}>
+  const inner = (
+      <Link href={researchHref(coin)}>
         <div className="flex items-center gap-3 px-4 py-3.5 active:bg-white/5 transition-colors cursor-pointer">
           <button
             className="shrink-0 p-1 -ml-1 rounded-lg active:scale-90 transition-transform"
@@ -478,6 +483,18 @@ function MobileCoinRow({ coin, idx, isWatched, onWatchlist }: {
           </div>
         </div>
       </Link>
+  );
+  if (lite) {
+    return <>{inner}</>;
+  }
+  return (
+    <motion.div
+      initial={{ opacity:0, x:-8 }}
+      animate={{ opacity:1, x:0 }}
+      transition={{ duration:0.12, delay:Math.min(idx*0.012, 0.35) }}
+      style={{ borderBottom:"1px solid rgba(255,255,255,0.04)" }}
+    >
+      {inner}
     </motion.div>
   );
 }
@@ -544,7 +561,7 @@ export default function Markets() {
 
   const [page, setPage]           = useState(1);
   const [search, setSearch]       = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search.trim(), 280);
   const [category, setCategory]   = useState("All");
   const [sortKey, setSortKey]     = useState<SortKey>("rank");
   const [sortDir, setSortDir]     = useState<SortDir>("asc");
@@ -553,16 +570,12 @@ export default function Markets() {
   const [countdown, setCountdown] = useState(30);
   const [showSearch, setShowSearch] = useState(false);
 
-  // Debounce search for live CoinGecko search
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search.trim()), 350);
-    return () => clearTimeout(t);
-  }, [search]);
-
   // ── Category-based data ────────────────────────────────────────────────────
   const activeCategoryId = CATEGORY_MAP[category] ?? null;
-  const isCategoryMode = activeCategoryId !== null;
-  const optimizedAll = !isCategoryMode && category === "All";
+  const isTrendingMode = activeCategoryId === "__trending__";
+  const isNewListingsMode = activeCategoryId === "__new__";
+  const isCategoryMode = activeCategoryId !== null && !isTrendingMode && !isNewListingsMode;
+  const optimizedAll = !activeCategoryId && category === "All";
 
   const {
     data: categoryCoins,
@@ -577,6 +590,35 @@ export default function Markets() {
     refetchInterval: 30_000,
     staleTime: 30_000,
     retry: 2,
+  });
+
+  const { data: trendingCoins, isLoading: trendingLoading } = useQuery({
+    queryKey: ["cg-trending-markets"],
+    queryFn: async (): Promise<CoinMarket[]> => {
+      const r = await fetch("/api/coins/trending");
+      if (!r.ok) throw new Error(`trending ${r.status}`);
+      const data = await r.json() as { coins: { item: { id: string; symbol: string; name: string; thumb: string; market_cap_rank: number; data: { price: string; price_change_percentage_24h?: { usd: number }; market_cap: string } } }[] };
+      const ids = data.coins.map((c) => c.item.id).join(",");
+      if (!ids) return [];
+      const mr = await fetch(`/api/coins/markets-by-ids?ids=${encodeURIComponent(ids)}&price_change_percentage=1h,7d`);
+      if (!mr.ok) throw new Error(`trending markets ${mr.status}`);
+      return mr.json();
+    },
+    enabled: isTrendingMode,
+    staleTime: 300_000,
+    retry: 1,
+  });
+
+  const { data: newListingCoins, isLoading: newListingsLoading } = useQuery({
+    queryKey: ["cg-new-listings", page],
+    queryFn: async (): Promise<CoinMarket[]> => {
+      const r = await fetch(`/api/coins/markets?page=${page}&per_page=100&sparkline=false&price_change_percentage=1h,7d&order=created_desc`);
+      if (!r.ok) throw new Error(`new listings ${r.status}`);
+      return r.json();
+    },
+    enabled: isNewListingsMode,
+    staleTime: 60_000,
+    retry: 1,
   });
 
   const isSearchMode = debouncedSearch.length >= 1 && !optimizedAll;
@@ -594,7 +636,7 @@ export default function Markets() {
   const { data: coins, isLoading, isError: coinsQueryError, error: coinsQueryErr, dataUpdatedAt, refetch } = useQuery({
     queryKey: ["cg-markets", page],
     queryFn: () => fetchMarkets(page),
-    enabled: !optimizedAll,
+    enabled: !optimizedAll && !isCategoryMode && !isTrendingMode && !isNewListingsMode,
     refetchInterval: optimizedAll ? false : 30_000,
     staleTime: 30_000,
     retry: 2,
@@ -609,13 +651,26 @@ export default function Markets() {
   const g = globalRaw?.data;
 
   // ── Resolved coin list ─────────────────────────────────────────────────────
-  const baseCoins: CoinMarket[] = isCategoryMode
-    ? (categoryCoins ?? [])
-    : optimizedAll
-      ? (opt.rows as CoinMarket[])
-      : (coins ?? []);
+  const baseCoins: CoinMarket[] = isTrendingMode
+    ? (trendingCoins ?? [])
+    : isNewListingsMode
+      ? (newListingCoins ?? [])
+      : isCategoryMode
+        ? (categoryCoins ?? [])
+        : optimizedAll
+          ? (opt.rows as CoinMarket[])
+          : (coins ?? []);
 
   const tickAt = optimizedAll ? opt.priceUpdatedAt : dataUpdatedAt;
+
+  const isRefreshingPrices = useMarketStore((s) => s.isRefreshingPrices);
+  const listFetching =
+    isRefreshingPrices ||
+    opt.isFetchingPrices ||
+    isLoading ||
+    categoryLoading ||
+    trendingLoading ||
+    newListingsLoading;
 
   const refetchMarketsList = useCallback(() => {
     if (optimizedAll) opt.refetchPrices();
@@ -638,8 +693,9 @@ export default function Markets() {
   }, [tickAt, refetchMarketsList]);
 
   const filtered = useMemo(() => {
-    if (optimizedAll) return [...baseCoins];
-    const list = [...baseCoins];
+    const unique = dedupeById(baseCoins);
+    if (optimizedAll) return [...unique];
+    const list = [...unique];
     list.sort((a, b) => {
       let av = 0;
       let bv = 0;
@@ -678,9 +734,15 @@ export default function Markets() {
 
   const effectiveLoading = optimizedAll
     ? opt.metadataLoading && baseCoins.length === 0
-    : isLoading || (isCategoryMode && categoryLoading);
+    : isTrendingMode
+      ? trendingLoading && baseCoins.length === 0
+      : isNewListingsMode
+        ? newListingsLoading && baseCoins.length === 0
+        : isLoading || (isCategoryMode && categoryLoading);
 
-  const marketsListError = optimizedAll ? opt.isError : coinsQueryError || (isCategoryMode && categoryIsError);
+  const marketsListError = optimizedAll
+    ? opt.isError
+    : coinsQueryError || (isCategoryMode && categoryIsError);
   const marketsListErr = optimizedAll ? opt.error : isCategoryMode ? categoryError : coinsQueryErr;
 
   const handleSort = useCallback(
@@ -747,11 +809,15 @@ export default function Markets() {
               style={{ background:"rgba(42,46,57,0.6)", border:"1px solid rgba(255,255,255,0.08)" }}>
               {showSearch ? <X size={16} style={{ color:"#d1d4dc" }} /> : <Search size={16} style={{ color:"#5a6072" }} />}
             </button>
-            <button onClick={() => refetchMarketsList()}
-              className="w-9 h-9 rounded-xl flex items-center justify-center active:bg-white/5 transition-colors"
-              style={{ background:"rgba(42,46,57,0.6)", border:"1px solid rgba(255,255,255,0.08)" }}>
-              <RefreshCw size={15} style={{ color:"#5a6072" }} />
-            </button>
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              loading={listFetching}
+              onClick={() => refetchMarketsList()}
+              className="!min-h-9 !min-w-9 !px-0"
+              aria-label="Refresh markets"
+              icon={<RefreshCw size={15} className={listFetching ? "animate-spin" : ""} style={{ color: "#5a6072" }} />}
+            />
           </div>
         </header>
 
@@ -826,7 +892,26 @@ export default function Markets() {
             <>
               {effectiveLoading
                 ? Array.from({length:20}).map((_,i) => <MobileSkelRow key={i} i={i} />)
-                : filtered.map((coin, idx) => (
+                : optimizedAll
+                  ? (
+                    <VirtualCoinList
+                      items={filtered}
+                      rowHeight={88}
+                      scrollParentRef={scrollRef}
+                      onEndReached={opt.hasMore ? opt.loadMore : undefined}
+                      renderRow={(coin, idx) => (
+                        <MobileCoinRow
+                          key={coin.id}
+                          coin={coin}
+                          idx={idx}
+                          lite
+                          isWatched={watchlist.has(coin.id)}
+                          onWatchlist={() => toggleWatch(coin.id)}
+                        />
+                      )}
+                    />
+                  )
+                  : filtered.map((coin, idx) => (
                     <MobileCoinRow key={coin.id} coin={coin} idx={idx}
                       isWatched={watchlist.has(coin.id)} onWatchlist={() => toggleWatch(coin.id)} />
                   ))
@@ -1061,7 +1146,7 @@ export default function Markets() {
                                   transition={{ duration:0.1, delay:Math.min(idx*0.008,0.25) }}
                                   className="group"
                                   style={{ borderBottom:"1px solid rgba(255,255,255,0.03)", cursor:"pointer" }}
-                                  onClick={() => setLocation(`/research/${c.symbol.toUpperCase()}`)}>
+                                  onClick={() => setLocation(researchHref(c))}>
                                   <td className="pl-4 pr-2 py-3" />
                                   <td className="px-3 py-3 text-[11px] font-mono tabular-nums" style={{ color:"#5a6072" }}>{c.market_cap_rank||"—"}</td>
                                   <td className="px-3 py-3">
@@ -1085,7 +1170,7 @@ export default function Markets() {
                                   transition={{ duration:0.1, delay:Math.min(idx*0.008,0.3) }}
                                   className="group"
                                   style={{ borderBottom:"1px solid rgba(255,255,255,0.03)", cursor:"pointer" }}
-                                  onClick={() => setLocation(`/research/${coin.symbol.toUpperCase()}`)}
+                                  onClick={() => setLocation(researchHref(coin))}
                                   onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background="rgba(41,98,255,0.04)"; }}
                                   onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background="transparent"; }}>
                                   <td className="pl-4 pr-2 py-3" onClick={e => e.stopPropagation()}>
@@ -1433,7 +1518,7 @@ export default function Markets() {
                                 initial={{ opacity:0 }} animate={{ opacity:1 }}
                                 transition={{ duration:0.1, delay:Math.min(idx*0.007,0.25) }}
                                 style={{ borderBottom:"1px solid rgba(255,255,255,0.03)", cursor:"pointer" }}
-                                onClick={() => setLocation(`/research/${c.symbol.toUpperCase()}`)}
+                                onClick={() => setLocation(researchHref(c))}
                                 onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background="rgba(41,98,255,0.05)"; }}
                                 onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background="transparent"; }}>
                                 <td className="pl-4 pr-2 py-3.5" />
@@ -1466,7 +1551,7 @@ export default function Markets() {
                                 initial={{ opacity:0 }} animate={{ opacity:1 }}
                                 transition={{ duration:0.1, delay:Math.min(idx*0.007,0.3) }}
                                 style={{ borderBottom:"1px solid rgba(255,255,255,0.03)", cursor:"pointer" }}
-                                onClick={() => setLocation(`/research/${coin.symbol.toUpperCase()}`)}
+                                onClick={() => setLocation(researchHref(coin))}
                                 onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background="rgba(41,98,255,0.04)"; }}
                                 onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background="transparent"; }}>
                                 <td className="pl-4 pr-2 py-3.5" onClick={e => e.stopPropagation()}>
@@ -1570,7 +1655,7 @@ export default function Markets() {
                       <motion.div key={coin.id}
                         initial={{ opacity:0, scale:0.96 }} animate={{ opacity:1, scale:1 }}
                         transition={{ duration:0.18, delay:Math.min(idx*0.01,0.4) }}
-                        onClick={() => setLocation(`/research/${coin.symbol.toUpperCase()}`)}
+                        onClick={() => setLocation(researchHref(coin))}
                         className="rounded-2xl p-4 relative overflow-hidden group"
                         style={{ background:"rgba(13,17,26,0.8)", backdropFilter:"blur(20px)",
                           border:"1px solid rgba(255,255,255,0.05)", cursor:"pointer", transition:"all 0.2s" }}

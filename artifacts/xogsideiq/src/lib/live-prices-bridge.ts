@@ -1,5 +1,7 @@
 /**
  * Future: swap implementation for WebSocket-backed live prices without changing UI hooks.
+ * TradingView charts already stream from their datafeed; this bridge is for the app’s price
+ * ribbons/lists once a WS feed is chosen.
  */
 export type LivePriceListener = (ids: string[]) => void;
 

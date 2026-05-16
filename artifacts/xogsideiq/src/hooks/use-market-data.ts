@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useEffect } from "react";
+import { dedupeById } from "@/lib/dedupe-coins";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -111,11 +112,10 @@ export function useLiveCoins250() {
     placeholderData: (prev) => prev,
   });
   return {
-    data: useMemo(() => [
-      ...(p1.data ?? []),
-      ...(p2.data ?? []),
-      ...(p3.data ?? []),
-    ], [p1.data, p2.data, p3.data]),
+    data: useMemo(
+      () => dedupeById([...(p1.data ?? []), ...(p2.data ?? []), ...(p3.data ?? [])]),
+      [p1.data, p2.data, p3.data],
+    ),
     isLoading: p1.isLoading,
     isError: p1.isError || p2.isError,
   };

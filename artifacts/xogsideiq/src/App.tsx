@@ -1,6 +1,7 @@
 import React from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -27,7 +28,15 @@ import Profile from "@/pages/Profile";
 import TokenDetail from "@/pages/TokenDetail";
 import Discover from "@/pages/Discover";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function Router() {
   return (
@@ -75,6 +84,7 @@ function App() {
             <Router />
           </WouterRouter>
           <Toaster />
+          <PwaInstallPrompt />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>

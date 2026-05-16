@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
+import { API_CACHE, cachedJsonFetch } from "@/lib/api-cache";
 import { getLivePricesBridge } from "@/lib/live-prices-bridge";
+import { useMarketStore } from "@/stores/market-store";
 
 export type SortKey = "rank" | "price" | "ch1h" | "ch24h" | "ch7d" | "mcap" | "vol";
 
@@ -149,8 +151,8 @@ export function useOptimizedMarkets(enabled: boolean, search: string, sortKey: S
         bv = b.r;
       }
       if (sortKey === "price") {
-        av = a.mc;
-        bv = b.mc;
+        av = a.mc > 0 ? a.mc : a.r;
+        bv = b.mc > 0 ? b.mc : b.r;
       }
       if (sortKey === "ch1h") {
         av = a.ch1h ?? 0;
@@ -193,9 +195,11 @@ export function useOptimizedMarkets(enabled: boolean, search: string, sortKey: S
     queries: batches.map((ids) => ({
       queryKey: ["market-prices", ids.join(",")],
       queryFn: async (): Promise<Record<string, SimpleQuote>> => {
-        const r = await fetch(`/api/coins/market-prices?ids=${encodeURIComponent(ids.join(","))}`);
-        if (!r.ok) throw new Error(`market-prices ${r.status}`);
-        return r.json();
+        const url = `/api/coins/market-prices?ids=${encodeURIComponent(ids.join(","))}`;
+        useMarketStore.getState().setRefreshingPrices(true);
+        const data = await cachedJsonFetch<Record<string, SimpleQuote>>(url, API_CACHE.prices);
+        useMarketStore.getState().mergeQuotes(data);
+        return data;
       },
       enabled: enabled && ids.length > 0 && metaQ.isSuccess,
       staleTime: PRICE_STALE_MS,
@@ -217,10 +221,17 @@ export function useOptimizedMarkets(enabled: boolean, search: string, sortKey: S
     getLivePricesBridge().setDesiredIds(prefetchIds);
   }, [enabled, prefetchIds]);
 
-  const rows: CoinMarketView[] = useMemo(
-    () => visibleMeta.map((c) => mergeRow(c, priceMap[c.id])),
-    [visibleMeta, priceMap],
-  );
+  const rows: CoinMarketView[] = useMemo(() => {
+    const merged = visibleMeta.map((c) => mergeRow(c, priceMap[c.id]));
+    if (sortKey !== "price") return merged;
+    const sorted = [...merged];
+    sorted.sort((a, b) => {
+      const av = a.current_price || 0;
+      const bv = b.current_price || 0;
+      return sortDir === "asc" ? av - bv : bv - av;
+    });
+    return sorted;
+  }, [visibleMeta, priceMap, sortKey, sortDir]);
 
   const loadMore = useCallback(() => {
     setVisibleCount((c) => Math.min(c + PAGE_VISIBLE, sortedMeta.length));

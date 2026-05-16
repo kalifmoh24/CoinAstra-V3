@@ -183,8 +183,8 @@ export interface GlobalData {
 
 export interface MarketsQueryOpts {
   sparkline?: boolean;
-  /** CoinGecko `price_change_percentage` param, e.g. `1h,7d,30d` */
   priceChangePercentage?: string;
+  order?: string;
 }
 
 export type SimpleUsdQuote = {
@@ -227,6 +227,25 @@ export async function getSimplePricesBatched(allIds: string[], concurrency = 2):
   return out;
 }
 
+/** Market rows for specific coin ids (lightweight vs /coins/{id}). */
+export async function getCoinsMarketsByIds(
+  ids: string[],
+  opts?: MarketsQueryOpts,
+): Promise<CoinMarket[]> {
+  const uniq = [...new Set(ids.map((id) => id.trim().toLowerCase()).filter(Boolean))];
+  if (uniq.length === 0) return [];
+  const params: Record<string, string> = {
+    vs_currency: "usd",
+    ids: uniq.slice(0, 250).join(","),
+    order: "market_cap_desc",
+    per_page: String(Math.min(uniq.length, 250)),
+    page: "1",
+    sparkline: opts?.sparkline === true ? "true" : "false",
+    price_change_percentage: opts?.priceChangePercentage ?? "1h,7d,30d",
+  };
+  return cgFetch<CoinMarket[]>("/coins/markets", TTL.MARKETS, params);
+}
+
 /** Top coins by market cap, paginated (max 250 per call on free tier) */
 export async function getCoinsMarkets(
   page = 1,
@@ -236,7 +255,7 @@ export async function getCoinsMarkets(
 ): Promise<CoinMarket[]> {
   const params: Record<string, string> = {
     vs_currency: "usd",
-    order: "market_cap_desc",
+    order: opts?.order ?? "market_cap_desc",
     per_page: String(Math.min(perPage, 250)),
     page: String(page),
     sparkline: opts?.sparkline === false ? "false" : "true",
@@ -251,11 +270,13 @@ export async function searchCoins(query: string): Promise<{ coins: { id: string;
   return cgFetch("/search", TTL.SEARCH, { query });
 }
 
+export type CoinDetailsOpts = { includeTickers?: boolean };
+
 /** Single coin detailed data */
-export async function getCoinDetails(id: string): Promise<CoinDetails> {
+export async function getCoinDetails(id: string, opts?: CoinDetailsOpts): Promise<CoinDetails> {
   return cgFetch<CoinDetails>(`/coins/${encodeURIComponent(id)}`, TTL.COIN, {
     localization: "false",
-    tickers: "false",
+    tickers: opts?.includeTickers ? "true" : "false",
     market_data: "true",
     community_data: "true",
     developer_data: "false",
@@ -264,11 +285,16 @@ export async function getCoinDetails(id: string): Promise<CoinDetails> {
 }
 
 /** Price chart — [timestamp, price] pairs */
-export async function getCoinChart(id: string, days: number): Promise<{ prices: [number, number][]; market_caps: [number, number][]; total_volumes: [number, number][] }> {
+export async function getCoinChart(
+  id: string,
+  days: number | "max",
+): Promise<{ prices: [number, number][]; market_caps: [number, number][]; total_volumes: [number, number][] }> {
+  const daysParam = days === "max" ? "max" : String(days);
+  const d = days === "max" ? 365 : days;
   return cgFetch(`/coins/${encodeURIComponent(id)}/market_chart`, TTL.CHART, {
     vs_currency: "usd",
-    days: String(days),
-    interval: days <= 1 ? "hourly" : days <= 90 ? "daily" : "daily",
+    days: daysParam,
+    interval: days === "max" ? "daily" : d <= 1 ? "hourly" : d <= 90 ? "daily" : "daily",
   });
 }
 
@@ -333,14 +359,16 @@ export async function getCoinsByCategory(
   });
 }
 
-/** Find a coin ID by symbol (searches and picks best match) */
-export async function getCoinIdBySymbol(symbol: string): Promise<string | null> {
+/** Find a coin ID by symbol — prefers highest market_cap_rank. */
+export async function getCoinIdBySymbol(symbol: string, preferredId?: string): Promise<string | null> {
+  if (preferredId) return preferredId.toLowerCase();
   try {
     const result = await searchCoins(symbol);
-    const match = result.coins.find(
-      (c) => c.symbol.toLowerCase() === symbol.toLowerCase()
-    );
-    return match?.id ?? null;
+    const sym = symbol.toLowerCase();
+    const exact = result.coins.filter((c) => c.symbol.toLowerCase() === sym);
+    if (exact.length === 0) return null;
+    exact.sort((a, b) => (a.market_cap_rank ?? 999_999) - (b.market_cap_rank ?? 999_999));
+    return exact[0]?.id ?? null;
   } catch (err) {
     console.warn({ err, symbol }, "getCoinIdBySymbol failed");
     return null;

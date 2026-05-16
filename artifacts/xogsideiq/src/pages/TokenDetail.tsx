@@ -1,37 +1,42 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useParams } from "wouter";
 import {
-  createChart, CandlestickSeries, LineSeries, AreaSeries,
-  type IChartApi,
-} from "lightweight-charts";
-import {
-  useGetTokenScores, getGetTokenScoresQueryKey,
   useGetTokenNews, getGetTokenNewsQueryKey,
 } from "@workspace/api-client-react";
-import { useTokenLive, useCoinOHLC, useCoinChart, useCoinSearch, type CoinLiveData } from "@/hooks/use-coins";
+import {
+  useCoinSearch,
+  type CoinLiveData,
+} from "@/hooks/use-coins";
+import { useTokenDetail } from "@/hooks/use-token-detail";
 import { useLiveCoins, type LiveCoin } from "@/hooks/use-market-data";
-import { useAddToWatchlist, useRemoveFromWatchlist, useWatchlist } from "@/hooks/use-watchlist";
 import { analyzeToken } from "@/lib/ai-engine";
 import { formatNumber } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ActionButton } from "@/components/action-button";
+import { TokenStatsGrid } from "@/components/token-stats-grid";
+import { CategoriesStrip, ExchangeListings, BlockchainNetworks } from "@/components/token-extras";
+import { TokenIntelligencePanel } from "@/components/token-intelligence-panel";
+import { TradingViewCoinChart } from "@/components/tradingview-coin-chart";
+import { researchHref } from "@/lib/research-url";
+import { isDisplayablePrice } from "@/lib/coin-detail-persist";
 import {
   Star, ArrowLeft, ArrowUp, ArrowDown, ExternalLink, Globe, Twitter, Github,
   FileText, Layers, Search, BrainCircuit, Activity, AlertTriangle, BarChart2,
-  TrendingUp, Users, Zap, RefreshCw, Copy, ChevronRight,
+  TrendingUp, Users, Zap, Copy, ChevronRight,
   BookOpen, Clock, Radio, MessageCircle,
 } from "lucide-react";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmtP(n: number | null | undefined): string {
-  if (n == null) return "—";
+  if (n == null || !Number.isFinite(n) || n === 0) return "—";
   if (n >= 1) return `$${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
   if (n >= 0.01) return `$${n.toFixed(4)}`;
   if (n >= 0.0001) return `$${n.toFixed(6)}`;
   return `$${n.toFixed(8)}`;
 }
 function fmtB(n: number | null | undefined): string {
-  if (n == null) return "—";
+  if (n == null || !Number.isFinite(n) || n === 0) return "—";
   if (n >= 1e12) return `$${(n / 1e12).toFixed(2)}T`;
   if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
   if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
@@ -47,15 +52,17 @@ function fmtPct(n: number | null | undefined, showPlus = true): string {
 const CARD = { background: "rgba(10,14,22,0.92)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16 };
 const CARD_HIGHLIGHT = { background: "rgba(10,14,22,0.92)", border: "1px solid rgba(41,98,255,0.2)", borderRadius: 16 };
 
-type TabId = "overview" | "ai" | "onchain" | "social" | "news" | "info";
-
-const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
-  { id: "overview", label: "Overview", icon: <BarChart2 className="h-3.5 w-3.5" /> },
-  { id: "ai",       label: "AI Analysis", icon: <BrainCircuit className="h-3.5 w-3.5" /> },
-  { id: "onchain",  label: "On-Chain", icon: <Activity className="h-3.5 w-3.5" /> },
-  { id: "social",   label: "Social", icon: <Users className="h-3.5 w-3.5" /> },
-  { id: "news",     label: "News", icon: <Radio className="h-3.5 w-3.5" /> },
-  { id: "info",     label: "Info", icon: <BookOpen className="h-3.5 w-3.5" /> },
+const WORKSPACE_LINKS: { id: string; label: string }[] = [
+  { id: "sec-overview", label: "Overview" },
+  { id: "sec-markets", label: "Markets" },
+  { id: "sec-news", label: "News" },
+  { id: "sec-similar", label: "Similar Coins" },
+  { id: "sec-history", label: "Historic Data" },
+  { id: "sec-ai", label: "AI Analysis" },
+  { id: "sec-onchain", label: "On-Chain" },
+  { id: "sec-holders", label: "Holders" },
+  { id: "sec-social", label: "Social Sentiment" },
+  { id: "sec-tokenomics", label: "Tokenomics" },
 ];
 
 const QUICK_COINS = [
@@ -124,7 +131,7 @@ function QuickCoinNav({ currentSymbol }: { currentSymbol: string }) {
           <div className="absolute right-0 top-10 z-50 rounded-xl overflow-hidden shadow-2xl"
             style={{ background: "#0d1119", border: "1px solid rgba(255,255,255,0.1)", width: 220 }}>
             {searchData.coins.slice(0, 8).map(c => (
-              <button key={c.id} onClick={() => { go(c.symbol); setQuery(""); }}
+              <button key={c.id} onClick={() => { setLocation(researchHref({ id: c.id, symbol: c.symbol })); setQuery(""); }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-white/5 transition-all">
                 {c.thumb && <img src={c.thumb} alt={c.symbol} className="w-5 h-5 rounded-full" />}
                 <div>
@@ -141,289 +148,27 @@ function QuickCoinNav({ currentSymbol }: { currentSymbol: string }) {
   );
 }
 
-// ── Coin Header ────────────────────────────────────────────────────────────────
-
-function CoinHeader({ symbol, live }: { symbol: string; live: CoinLiveData | undefined }) {
-  const [, setLocation] = useLocation();
-  const [copied, setCopied] = useState(false);
-  const { data: watchlist = [] } = useWatchlist();
-  const isWatched = watchlist.some(w => w.symbol === symbol || w.coinId === live?.id);
-  const watchedItem = watchlist.find(w => w.symbol === symbol || (live?.id && w.coinId === live.id));
-  const add = useAddToWatchlist();
-  const remove = useRemoveFromWatchlist();
-
-  const change24h = live?.priceChange24h ?? 0;
-  const change7d = live?.priceChange7d ?? 0;
-  const isUp = change24h >= 0;
-
-  return (
-    <div className="rounded-2xl p-4 mb-4" style={CARD}>
-      <div className="flex flex-col xl:flex-row xl:items-center gap-4">
-        {/* Logo + Name */}
-        <div className="flex items-center gap-3 min-w-0">
-          {live?.image ? (
-            <img src={live.image} alt={symbol} className="w-12 h-12 rounded-2xl" />
-          ) : (
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shrink-0"
-              style={{ background: "linear-gradient(135deg,rgba(41,98,255,0.2),rgba(77,127,255,0.08))", border: "1px solid rgba(41,98,255,0.2)", color: "#4d7fff" }}>
-              {symbol.slice(0, 2)}
-            </div>
-          )}
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-[20px] font-black text-white tracking-tight leading-none">{live?.name ?? symbol}</h1>
-              <span className="text-[12px] font-bold px-2 py-0.5 rounded-lg"
-                style={{ background: "rgba(255,255,255,0.06)", color: "#5a6072" }}>{symbol}</span>
-              {live?.rank && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg"
-                  style={{ background: "rgba(247,147,26,0.12)", color: "#f7931a", border: "1px solid rgba(247,147,26,0.2)" }}>
-                  #{live.rank}
-                </span>
-              )}
-              {live && <span className="text-[9px] px-1.5 py-0.5 rounded-md font-bold animate-pulse"
-                style={{ background: "rgba(38,166,154,0.15)", color: "#26a69a" }}>LIVE</span>}
-            </div>
-            {live?.categories && live.categories.length > 0 && (
-              <div className="flex items-center gap-1 mt-1 flex-wrap">
-                {live.categories.slice(0, 3).map(c => (
-                  <span key={c} className="text-[9px] px-2 py-0.5 rounded-md font-semibold"
-                    style={{ background: "rgba(41,98,255,0.1)", color: "#4d7fff" }}>{c}</span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Price Block */}
-        <div className="flex items-end gap-4 xl:mx-auto">
-          <div>
-            <div className="text-[32px] font-mono font-black tracking-tight text-white leading-none">{fmtP(live?.price)}</div>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="flex items-center gap-0.5 text-[13px] font-bold"
-                style={{ color: isUp ? "#26a69a" : "#ef5350" }}>
-                {isUp ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
-                {Math.abs(change24h).toFixed(2)}%
-                <span className="text-[9px] font-normal ml-0.5" style={{ color: "#4a5068" }}>24h</span>
-              </span>
-              <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-md"
-                style={{ background: change7d >= 0 ? "rgba(38,166,154,0.1)" : "rgba(239,83,80,0.1)", color: change7d >= 0 ? "#26a69a" : "#ef5350" }}>
-                {fmtPct(change7d)} 7d
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Market Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-3 gap-2 xl:gap-3">
-          {[
-            { label: "Market Cap", value: fmtB(live?.marketCap) },
-            { label: "24h Volume", value: fmtB(live?.volume24h) },
-            { label: "FDV", value: fmtB(live?.fdv) },
-            { label: "Max Supply", value: live?.maxSupply != null ? formatNumber(live.maxSupply) : "—" },
-            { label: "Total Supply", value: live?.totalSupply != null ? formatNumber(live.totalSupply) : "—" },
-            { label: "Circ. Supply", value: live?.circulatingSupply ? formatNumber(live.circulatingSupply) : "—" },
-            { label: "24h High", value: fmtP(live?.high24h) },
-            { label: "24h Low", value: fmtP(live?.low24h) },
-          ].map(m => (
-            <div key={m.label} className="text-center px-3 py-2 rounded-xl"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}>
-              <div className="text-[8px] uppercase tracking-wider font-semibold mb-0.5" style={{ color: "#4a5068" }}>{m.label}</div>
-              <div className="text-[12px] font-mono font-bold text-white">{m.value}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 xl:ml-auto shrink-0">
-          {isWatched && watchedItem ? (
-            <button onClick={() => remove.mutate(watchedItem.id)} disabled={remove.isPending}
-              className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-[11px] font-bold transition-all"
-              style={{ background: "rgba(247,147,26,0.15)", color: "#f7931a", border: "1px solid rgba(247,147,26,0.3)" }}>
-              <Star className="h-3.5 w-3.5" style={{ fill: "#f7931a" }} /> Watching
-            </button>
-          ) : (
-            <button onClick={() => add.mutate({ coinId: live?.id ?? symbol, symbol, name: live?.name ?? symbol, image: live?.image })}
-              disabled={add.isPending}
-              className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-[11px] font-bold transition-all hover:bg-white/5"
-              style={{ background: "rgba(255,255,255,0.05)", color: "#a0a8bc", border: "1px solid rgba(255,255,255,0.09)" }}>
-              <Star className="h-3.5 w-3.5" /> Watch
-            </button>
-          )}
-          <button onClick={() => { navigator.clipboard.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-            className="flex items-center gap-1.5 px-3 h-9 rounded-xl text-[11px] font-bold transition-all hover:bg-white/5"
-            style={{ background: "rgba(255,255,255,0.05)", color: "#a0a8bc", border: "1px solid rgba(255,255,255,0.09)" }}>
-            <Copy className="h-3.5 w-3.5" /> {copied ? "Copied!" : "Share"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+function scrollToSection(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-// ── Price Chart (lightweight-charts v5) ───────────────────────────────────────
-
-type ChartMode = "candlestick" | "line" | "area";
-const TFS = [
-  { label: "1D", days: 1 }, { label: "7D", days: 7 }, { label: "30D", days: 30 },
-  { label: "90D", days: 90 }, { label: "1Y", days: 365 },
-];
-
-function PriceChart({ coinId, symbol, currentPrice }: { coinId?: string; symbol: string; currentPrice?: number }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
-  const [mode, setMode] = useState<ChartMode>("candlestick");
-  const [days, setDays] = useState(7);
-
-  const { data: ohlcData, isLoading: ohlcLoading, isError: ohlcError } = useCoinOHLC(mode === "candlestick" ? coinId : undefined, days);
-  const { data: lineData, isLoading: lineLoading, isError: lineError } = useCoinChart(mode !== "candlestick" ? coinId : undefined, days);
-  const isLoading = mode === "candlestick" ? ohlcLoading : lineLoading;
-  const isError   = mode === "candlestick" ? ohlcError  : lineError;
-
-  const pctChange = useMemo(() => {
-    if (lineData?.prices?.length) {
-      const first = lineData.prices[0][1];
-      const last = lineData.prices[lineData.prices.length - 1][1];
-      return ((last - first) / first) * 100;
-    }
-    if (ohlcData?.length) {
-      const first = ohlcData[0][1];
-      const last = ohlcData[ohlcData.length - 1][4];
-      return ((last - first) / first) * 100;
-    }
-    return 0;
-  }, [lineData, ohlcData]);
-  const isUp = pctChange >= 0;
-  const lineColor = isUp ? "#26a69a" : "#ef5350";
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-
-    if (chartRef.current) {
-      chartRef.current.remove();
-      chartRef.current = null;
-    }
-
-    const chart = createChart(container, {
-      layout: { background: { color: "transparent" }, textColor: "#3a4058" },
-      grid: { vertLines: { color: "rgba(255,255,255,0.03)" }, horzLines: { color: "rgba(255,255,255,0.03)" } },
-      crosshair: { mode: 1 },
-      timeScale: { timeVisible: true, borderColor: "rgba(255,255,255,0.05)" },
-      rightPriceScale: { borderColor: "rgba(255,255,255,0.05)" },
-      width: container.clientWidth,
-      height: 320,
-    });
-    chartRef.current = chart;
-
-    if (mode === "candlestick" && ohlcData && ohlcData.length > 0) {
-      const series = chart.addSeries(CandlestickSeries, {
-        upColor: "#26a69a", downColor: "#ef5350",
-        borderUpColor: "#26a69a", borderDownColor: "#ef5350",
-        wickUpColor: "#26a69a", wickDownColor: "#ef5350",
-      });
-      const candles = ohlcData
-        .map(d => ({ time: Math.floor(d[0] / 1000) as never, open: d[1], high: d[2], low: d[3], close: d[4] }))
-        .filter((d, i, arr) => i === 0 || d.time !== arr[i - 1].time)
-        .sort((a, b) => (a.time as number) - (b.time as number));
-      series.setData(candles);
-    } else if (lineData && lineData.prices.length > 0) {
-      if (mode === "area") {
-        const series = chart.addSeries(AreaSeries, {
-          lineColor, topColor: `${lineColor}44`, bottomColor: "transparent", lineWidth: 2,
-        });
-        const pts = lineData.prices
-          .map(([ts, v]) => ({ time: Math.floor(ts / 1000) as never, value: v }))
-          .filter((d, i, arr) => i === 0 || d.time !== arr[i - 1].time)
-          .sort((a, b) => (a.time as number) - (b.time as number));
-        series.setData(pts);
-      } else {
-        const series = chart.addSeries(LineSeries, { color: lineColor, lineWidth: 2 });
-        const pts = lineData.prices
-          .map(([ts, v]) => ({ time: Math.floor(ts / 1000) as never, value: v }))
-          .filter((d, i, arr) => i === 0 || d.time !== arr[i - 1].time)
-          .sort((a, b) => (a.time as number) - (b.time as number));
-        series.setData(pts);
-      }
-    }
-
-    chart.timeScale().fitContent();
-
-    const observer = new ResizeObserver(() => {
-      if (chartRef.current && container) {
-        chartRef.current.applyOptions({ width: container.clientWidth });
-      }
-    });
-    observer.observe(container);
-
-    return () => {
-      observer.disconnect();
-      if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
-    };
-  }, [mode, ohlcData, lineData, lineColor]);
-
+function WorkspaceNav() {
   return (
-    <div className="rounded-2xl overflow-hidden" style={CARD}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 pt-4 pb-3"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <div className="flex items-center gap-3">
-          <BarChart2 className="h-4 w-4" style={{ color: "#4d7fff" }} />
-          <span className="text-[13px] font-bold text-white">Price Chart</span>
-          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg ${pctChange >= 0 ? "text-[#26a69a]" : "text-[#ef5350]"}`}
-            style={{ background: pctChange >= 0 ? "rgba(38,166,154,0.1)" : "rgba(239,83,80,0.1)" }}>
-            {fmtPct(pctChange)}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
-            {(["candlestick", "area", "line"] as ChartMode[]).map(m => (
-              <button key={m} onClick={() => setMode(m)}
-                className="px-2.5 py-1.5 text-[10px] font-bold capitalize transition-all"
-                style={{ background: mode === m ? "rgba(41,98,255,0.25)" : "rgba(255,255,255,0.02)", color: mode === m ? "#4d7fff" : "#5a6072" }}>
-                {m === "candlestick" ? "Candle" : m === "area" ? "Area" : "Line"}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-1">
-            {TFS.map(tf => (
-              <button key={tf.label} onClick={() => setDays(tf.days)}
-                className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all"
-                style={{
-                  background: days === tf.days ? "rgba(41,98,255,0.2)" : "rgba(255,255,255,0.03)",
-                  color: days === tf.days ? "#4d7fff" : "#5a6072",
-                  border: `1px solid ${days === tf.days ? "rgba(41,98,255,0.4)" : "rgba(255,255,255,0.05)"}`,
-                }}>
-                {tf.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="relative" style={{ minHeight: 340 }}>
-        {isLoading && !ohlcData && !lineData && (
-          <div className="absolute inset-0 flex items-center justify-center z-10">
-            <RefreshCw className="h-5 w-5 animate-spin" style={{ color: "#4d7fff" }} />
-          </div>
-        )}
-        {isError && !isLoading && !ohlcData && !lineData && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10">
-            <RefreshCw className="h-6 w-6" style={{ color: "#4a5068" }} />
-            <p className="text-[12px]" style={{ color: "#4a5068" }}>Chart data unavailable — check API connection</p>
-          </div>
-        )}
-        <div ref={containerRef} style={{ height: 320, opacity: (isLoading || isError) && !ohlcData && !lineData ? 0 : 1, transition: "opacity 0.3s" }} />
-        {/* Volume mini bar */}
-        {lineData?.total_volumes && (
-          <div className="px-4 pb-2" style={{ height: 48 }}>
-            <div className="flex items-end gap-0.5 h-full">
-              {lineData.total_volumes.slice(-60).map(([ts, vol], i, arr) => {
-                const max = Math.max(...arr.map(a => a[1]));
-                const pct = max > 0 ? (vol / max) * 100 : 0;
-                return <div key={ts} style={{ flex: 1, height: `${pct}%`, background: "rgba(41,98,255,0.3)", borderRadius: 2 }} />;
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+    <div
+      className="flex gap-1 overflow-x-auto no-scrollbar rounded-xl p-1 mb-3"
+      style={{ background: "rgba(10,14,22,0.92)", border: "1px solid rgba(255,255,255,0.07)" }}
+    >
+      {WORKSPACE_LINKS.map((l) => (
+        <button
+          key={l.id}
+          type="button"
+          onClick={() => scrollToSection(l.id)}
+          className="shrink-0 px-3 py-2 rounded-lg text-[11px] font-bold transition-all hover:bg-white/[0.04]"
+          style={{ color: "#8a92a6" }}
+        >
+          {l.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -909,7 +654,7 @@ function RelatedCoins({ symbol, live }: { symbol: string; live: CoinLiveData | u
         {related.map(c => {
           const up = c.price_change_percentage_24h >= 0;
           return (
-            <button key={c.id} onClick={() => setLocation(`/research/${c.symbol.toUpperCase()}`)}
+            <button key={c.id} onClick={() => setLocation(researchHref({ id: c.id, symbol: c.symbol }))}
               className="flex flex-col items-center gap-1.5 p-4 transition-all hover:bg-white/[0.03]"
               style={{ borderRight: "1px solid rgba(255,255,255,0.04)" }}>
               {c.image ? (
@@ -930,38 +675,15 @@ function RelatedCoins({ symbol, live }: { symbol: string; live: CoinLiveData | u
   );
 }
 
-// ── Scores sidebar ─────────────────────────────────────────────────────────────
-
-function ScoresSidebar({ symbol }: { symbol: string }) {
-  const { data: scores } = useGetTokenScores(symbol, {
-    query: {
-      queryKey: getGetTokenScoresQueryKey(symbol),
-      retry: (failureCount, err) => {
-        const status = (err as { status?: number })?.status;
-        if (status === 404) return false;
-        return failureCount < 2;
-      },
-    },
-  });
-  if (!scores) return null;
-  const grade = scores.finalGrade ?? "—";
-  const gradeColor = grade.startsWith("A") ? "#26a69a" : grade.startsWith("B") ? "#4d7fff" : grade.startsWith("C") ? "#f7931a" : "#ef5350";
-
+/** Placeholder — requires dedicated indexer / subgraph */
+function HoldersSection() {
   return (
-    <div className="rounded-2xl p-5" style={CARD}>
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-[13px] font-bold text-white">Intelligence Scores</span>
-        <span className="text-[20px] font-black px-3 py-1 rounded-xl"
-          style={{ background: `${gradeColor}18`, color: gradeColor, border: `1px solid ${gradeColor}30` }}>{grade}</span>
-      </div>
-      <div className="space-y-3">
-        <ScoreBar label="Overall" value={scores.overallScore} />
-        <ScoreBar label="Fundamental" value={scores.fundamentalScore} />
-        <ScoreBar label="Technical" value={scores.technicalScore} />
-        <ScoreBar label="Sentiment" value={scores.sentimentScore} />
-        <ScoreBar label="Narrative" value={scores.narrativeMomentumScore} />
-        <ScoreBar label="Risk" value={scores.riskScore} color={scores.riskScore > 70 ? "#ef5350" : scores.riskScore > 40 ? "#f7931a" : "#26a69a"} />
-      </div>
+    <div className="rounded-2xl p-6 text-center" style={CARD}>
+      <Users className="h-8 w-8 mx-auto mb-2" style={{ color: "#3a4058" }} />
+      <p className="text-[12px] font-bold text-white mb-1">Holder analytics</p>
+      <p className="text-[11px] leading-relaxed" style={{ color: "#5a6072" }}>
+        CoinGecko does not expose wallet-level holders here. Connect an on-chain provider to unlock this block.
+      </p>
     </div>
   );
 }
@@ -971,22 +693,28 @@ function ScoresSidebar({ symbol }: { symbol: string }) {
 export default function TokenDetail() {
   const params = useParams<{ symbol: string }>();
   const symbol = (params.symbol ?? "").toUpperCase();
-  const [activeTab, setActiveTab] = useState<TabId>("overview");
+  const [chartBgSync, setChartBgSync] = useState(false);
 
-  const { data: live, isLoading: liveLoading, isError: liveError } = useTokenLive(symbol || undefined);
-  const coinId = live?.id;
+  const coinIdParam = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("id");
+  }, [symbol]);
 
-  // Save to recently viewed
+  const { live, meta, coinId, metaLoading, isFetchingLive, isEnriching, hasInstantShell, isError } = useTokenDetail(
+    symbol || undefined,
+    coinIdParam,
+  );
+
   useEffect(() => {
-    if (!symbol || !live) return;
+    if (!symbol || !live?.id) return;
     try {
       const key = "ca-recently-viewed";
       const stored: { symbol: string; name: string; id: string }[] = JSON.parse(localStorage.getItem(key) ?? "[]");
-      const filtered = stored.filter(c => c.symbol !== symbol);
+      const filtered = stored.filter((c) => c.symbol !== symbol);
       const updated = [{ symbol, name: live.name, id: live.id }, ...filtered].slice(0, 10);
       localStorage.setItem(key, JSON.stringify(updated));
     } catch { /* ignore */ }
-  }, [symbol, live]);
+  }, [symbol, live?.id, live?.name]);
 
   if (!symbol) {
     return (
@@ -996,7 +724,7 @@ export default function TokenDetail() {
     );
   }
 
-  if (liveError && !liveLoading) {
+  if (isError && !hasInstantShell && !metaLoading) {
     return (
       <div className="pb-16">
         <QuickCoinNav currentSymbol={symbol} />
@@ -1004,12 +732,14 @@ export default function TokenDetail() {
           <AlertTriangle className="h-8 w-8 mx-auto mb-3" style={{ color: "#f7931a" }} />
           <p className="text-[14px] font-bold text-white mb-1">Could not load {symbol}</p>
           <p className="text-[12px]" style={{ color: "#5a6072" }}>
-            Start the API server (port 8787) or set VITE_API_PROXY_TARGET. Coin data is loaded live from CoinGecko via the backend.
+            CoinGecko may be rate-limited. Retry shortly — cached data is shown when available.
           </p>
         </div>
       </div>
     );
   }
+
+  const cid = coinId ?? meta?.id;
 
   return (
     <div className="pb-16">
@@ -1017,80 +747,109 @@ export default function TokenDetail() {
 
       <QuickCoinNav currentSymbol={symbol} />
 
-      {liveLoading && !live ? (
-        <div className="space-y-4">
-          <Skeleton className="h-36 w-full rounded-2xl" />
-          <Skeleton className="h-10 w-full rounded-2xl" />
-          <Skeleton className="h-96 w-full rounded-2xl" />
+      {metaLoading && !live ? (
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_400px] gap-4">
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full rounded-2xl animate-pulse" />
+            <Skeleton className="h-[400px] w-full rounded-2xl animate-pulse" />
+            <Skeleton className="h-64 w-full rounded-2xl animate-pulse" />
+          </div>
+          <Skeleton className="h-[720px] w-full rounded-2xl animate-pulse min-h-[50vh]" />
         </div>
       ) : (
-        <>
-          <CoinHeader symbol={symbol} live={live} />
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_400px] gap-4 items-start">
+          <div className="space-y-4 min-w-0">
+            <WorkspaceNav />
+            <TradingViewCoinChart
+              coinId={cid}
+              symbol={symbol}
+              live={live}
+              onChartRevalidate={setChartBgSync}
+            />
 
-          {/* Tab Nav */}
-          <div className="flex gap-0 mb-4 overflow-x-auto no-scrollbar rounded-2xl"
-            style={{ background: "rgba(10,14,22,0.92)", border: "1px solid rgba(255,255,255,0.07)" }}>
-            {TABS.map(tab => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className="flex items-center gap-2 px-4 py-3.5 text-[12px] font-bold whitespace-nowrap transition-all relative"
-                style={{ color: activeTab === tab.id ? "#4d7fff" : "#5a6072" }}>
-                {tab.icon}
-                {tab.label}
-                {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
-                    style={{ background: "#4d7fff" }} />
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Tab Content */}
-          {activeTab === "overview" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-                <div className="xl:col-span-2 space-y-4">
-                  <PriceChart coinId={coinId} symbol={symbol} currentPrice={live?.price} />
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <StatCard label="ATH" value={fmtP(live?.ath)} sub={live?.athDate ? new Date(live.athDate).toLocaleDateString() : undefined} />
-                    <StatCard label="ATH Change" value={fmtPct(live?.athChange)}
-                      color={(live?.athChange ?? 0) >= 0 ? "#26a69a" : "#ef5350"} />
-                    <StatCard label="30d Change" value={fmtPct(live?.priceChange30d)}
-                      color={(live?.priceChange30d ?? 0) >= 0 ? "#26a69a" : "#ef5350"} />
-                    <StatCard label="1y Change" value={fmtPct(live?.priceChange1y)}
-                      color={(live?.priceChange1y ?? 0) >= 0 ? "#26a69a" : "#ef5350"} />
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <ScoresSidebar symbol={symbol} />
-                  <div className="rounded-2xl p-5" style={CARD}>
-                    <div className="text-[12px] font-bold text-white mb-3">Quick Stats</div>
-                    <div className="space-y-2">
-                      {[
-                        { label: "Vol / MCap", value: live ? `${((live.volume24h / live.marketCap) * 100).toFixed(2)}%` : "—" },
-                        { label: "Circ / Max", value: live?.maxSupply ? `${((live.circulatingSupply / live.maxSupply) * 100).toFixed(1)}%` : "—" },
-                        { label: "Market Rank", value: live?.rank ? `#${live.rank}` : "—" },
-                        { label: "Last Updated", value: "Live" },
-                      ].map(row => (
-                        <div key={row.label} className="flex justify-between py-1.5"
-                          style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          <span className="text-[10px]" style={{ color: "#5a6072" }}>{row.label}</span>
-                          <span className="text-[11px] font-mono font-bold text-white">{row.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+            <div id="sec-overview" className="scroll-mt-24 space-y-4">
+              <div className="rounded-2xl p-4" style={CARD}>
+                <div className="text-[12px] font-bold text-white mb-3">Snapshot</div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <StatCard label="ATH" value={fmtP(live?.ath)} sub={live?.athDate ? new Date(live.athDate).toLocaleDateString() : undefined} />
+                  <StatCard label="ATH Δ" value={fmtPct(live?.athChange)} color={(live?.athChange ?? 0) >= 0 ? "#26a69a" : "#ef5350"} />
+                  <StatCard label="30d" value={fmtPct(live?.priceChange30d)} color={(live?.priceChange30d ?? 0) >= 0 ? "#26a69a" : "#ef5350"} />
+                  <StatCard label="1y" value={fmtPct(live?.priceChange1y)} color={(live?.priceChange1y ?? 0) >= 0 ? "#26a69a" : "#ef5350"} />
                 </div>
               </div>
+            </div>
+
+            <div id="sec-markets" className="scroll-mt-24 space-y-4">
+              <div className="rounded-2xl p-4 min-w-0 overflow-hidden" style={CARD}>
+                <div className="text-[12px] font-bold text-white mb-3">Market statistics</div>
+                <TokenStatsGrid live={live} loading={isFetchingLive && !isDisplayablePrice(live?.price)} />
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 min-w-0">
+                <ExchangeListings exchanges={live?.exchanges} loading={isEnriching && !live?.exchanges?.length} />
+                <BlockchainNetworks
+                  platforms={live?.platforms}
+                  explorers={live?.links?.explorers}
+                  loading={isEnriching && !live?.platforms}
+                />
+              </div>
+            </div>
+
+            <div id="sec-news" className="scroll-mt-24">
+              <NewsTab symbol={symbol} />
+            </div>
+
+            <div id="sec-similar" className="scroll-mt-24">
               <RelatedCoins symbol={symbol} live={live} />
             </div>
-          )}
 
-          {activeTab === "ai" && <AiAnalysisTab live={live} symbol={symbol} />}
-          {activeTab === "onchain" && <OnChainTab live={live} symbol={symbol} />}
-          {activeTab === "social" && <SocialTab live={live} symbol={symbol} />}
-          {activeTab === "news" && <NewsTab symbol={symbol} />}
-          {activeTab === "info" && <InfoTab live={live} symbol={symbol} />}
-        </>
+            <div id="sec-history" className="scroll-mt-24">
+              <div className="rounded-2xl p-5 space-y-2" style={CARD}>
+                <div className="text-[12px] font-bold text-white">Historic data</div>
+                <p className="text-[11px] leading-relaxed" style={{ color: "#8892a4" }}>
+                  Long-range history, indicators, and drawings are powered by the embedded TradingView chart above. CoinGecko remains the source for ATH/ATL and market metadata on this page.
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                  <div>ATH: {fmtP(live?.ath)}</div>
+                  <div>ATL: {fmtP(live?.atl)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="sec-ai" className="scroll-mt-24">
+              <AiAnalysisTab live={live} symbol={symbol} />
+            </div>
+
+            <div id="sec-onchain" className="scroll-mt-24">
+              <OnChainTab live={live} symbol={symbol} />
+            </div>
+
+            <div id="sec-holders" className="scroll-mt-24">
+              <HoldersSection />
+            </div>
+
+            <div id="sec-social" className="scroll-mt-24">
+              <SocialTab live={live} symbol={symbol} />
+            </div>
+
+            <div id="sec-tokenomics" className="scroll-mt-24 space-y-4">
+              <div className="rounded-2xl p-4 min-w-0" style={CARD}>
+                <div className="text-[12px] font-bold text-white mb-2">Categories</div>
+                <CategoriesStrip categories={live?.categories} loading={isEnriching && !live?.categories?.length} />
+              </div>
+              <InfoTab live={live} symbol={symbol} />
+            </div>
+          </div>
+
+          <aside className="xl:sticky xl:top-4 xl:self-start z-10">
+            <TokenIntelligencePanel
+              symbol={symbol}
+              live={live}
+              isFetchingLive={isFetchingLive}
+              isEnriching={isEnriching}
+              chartSynced={chartBgSync}
+            />
+          </aside>
+        </div>
       )}
     </div>
   );

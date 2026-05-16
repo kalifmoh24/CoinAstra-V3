@@ -19,6 +19,8 @@ import {
   getCoinDetails,
   getCoinIdBySymbol,
   getCoinsMarkets,
+  getCoinsMarketsByIds,
+  getSimplePricesForIds,
   getCoinsByCategory,
   getCoinCategories,
   getCoinOHLC,
@@ -400,15 +402,26 @@ export async function handleDevApi(req: IncomingMessage, res: ServerResponse): P
       return true;
     }
 
+    if (method === "GET" && path === "/coins/markets-by-ids") {
+      const raw = searchParams.get("ids") ?? "";
+      const ids = raw.split(",").map((s) => s.trim()).filter(Boolean);
+      const pricePct = searchParams.get("price_change_percentage") ?? "1h,7d,30d";
+      const data = await getCoinsMarketsByIds(ids, { sparkline: false, priceChangePercentage: pricePct });
+      json(res, 200, data);
+      return true;
+    }
+
     if (method === "GET" && path === "/coins/markets") {
       const page = Math.max(1, Number(searchParams.get("page")) || 1);
       const perPage = Math.min(250, Math.max(10, Number(searchParams.get("per_page")) || 100));
       const category = searchParams.get("category") ?? undefined;
       const sparkline = searchParams.get("sparkline") !== "false";
       const pricePct = searchParams.get("price_change_percentage") ?? undefined;
+      const order = searchParams.get("order") ?? undefined;
       const data = await getCoinsMarkets(page, perPage, category, {
         sparkline,
         priceChangePercentage: pricePct ?? undefined,
+        order: order ?? undefined,
       });
       json(res, 200, data);
       return true;
@@ -463,7 +476,8 @@ export async function handleDevApi(req: IncomingMessage, res: ServerResponse): P
     const coinChart = path.match(/^\/coins\/([^/]+)\/chart$/);
     if (method === "GET" && coinChart) {
       const id = coinChart[1].toLowerCase();
-      const days = Math.min(365, Math.max(1, Number(searchParams.get("days")) || 7));
+      const raw = (searchParams.get("days") ?? "7").toLowerCase();
+      const days = raw === "max" ? "max" : Math.min(365, Math.max(1, Number(searchParams.get("days")) || 7));
       json(res, 200, await getCoinChart(id, days));
       return true;
     }
@@ -479,7 +493,8 @@ export async function handleDevApi(req: IncomingMessage, res: ServerResponse): P
     const coinDetail = path.match(/^\/coins\/([^/]+)$/);
     if (method === "GET" && coinDetail) {
       const id = coinDetail[1].toLowerCase();
-      json(res, 200, await getCoinDetails(id));
+      const includeTickers = searchParams.get("tickers") === "1";
+      json(res, 200, await getCoinDetails(id, { includeTickers }));
       return true;
     }
 
@@ -1045,15 +1060,54 @@ export async function handleDevApi(req: IncomingMessage, res: ServerResponse): P
     const tokLive = path.match(/^\/tokens\/([^/]+)\/live$/);
     if (method === "GET" && tokLive) {
       const symbol = tokLive[1].toUpperCase();
+      const preferredId = searchParams.get("id") ?? undefined;
+      const full = searchParams.get("full") === "1";
       const mem = memoryStore.importedTokens.find((t) => t.symbol === symbol);
-      let cgId = mem?.coingeckoId ?? null;
-      if (!cgId) cgId = await getCoinIdBySymbol(symbol);
+      let cgId = preferredId ?? mem?.coingeckoId ?? null;
+      if (!cgId) cgId = await getCoinIdBySymbol(symbol, preferredId ?? undefined);
       if (!cgId) {
         json(res, 404, { error: "CoinGecko ID not found for this token" });
         return true;
       }
-      const details = await getCoinDetails(cgId);
-      json(res, 200, buildLivePayload(cgId, details));
+      if (full) {
+        const details = await getCoinDetails(cgId);
+        json(res, 200, buildLivePayload(cgId, details));
+        return true;
+      }
+      const [markets, quotes] = await Promise.all([
+        getCoinsMarketsByIds([cgId], { sparkline: false, priceChangePercentage: "1h,7d,30d" }),
+        getSimplePricesForIds([cgId]),
+      ]);
+      const m = markets[0];
+      if (!m) {
+        json(res, 404, { error: "Market data not found" });
+        return true;
+      }
+      const q = quotes[cgId];
+      json(res, 200, {
+        id: cgId,
+        symbol: m.symbol.toUpperCase(),
+        name: m.name,
+        image: m.image,
+        rank: m.market_cap_rank,
+        price: q?.usd ?? m.current_price,
+        priceChange24h: q?.usd_24h_change ?? m.price_change_percentage_24h,
+        priceChange7d: m.price_change_percentage_7d_in_currency ?? 0,
+        priceChange30d: 0,
+        priceChange1y: 0,
+        marketCap: q?.usd_market_cap ?? m.market_cap,
+        volume24h: q?.usd_24h_vol ?? m.total_volume,
+        fdv: m.fully_diluted_valuation,
+        high24h: m.high_24h,
+        low24h: m.low_24h,
+        ath: m.ath,
+        athChange: m.ath_change_percentage,
+        athDate: "",
+        circulatingSupply: m.circulating_supply,
+        totalSupply: m.total_supply,
+        maxSupply: m.max_supply,
+        categories: [],
+      });
       return true;
     }
 
