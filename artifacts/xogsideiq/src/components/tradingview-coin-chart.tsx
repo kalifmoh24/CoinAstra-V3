@@ -25,6 +25,9 @@ const TV_TIMEFRAMES: { label: string; value: string }[] = [
 
 const TV_EMBED = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
 
+/** Reserved strip under the iframe for TradingView branding (autosize layout). */
+const TV_WIDGET_CHROME_PX = 32;
+
 function fmtPct(n: number | null | undefined, showPlus = true): string {
   if (n == null) return "—";
   const s = n >= 0 && showPlus ? "+" : "";
@@ -51,9 +54,11 @@ function TradingViewMount({
     if (!el || !tvSymbol) return;
 
     el.innerHTML = "";
+    const innerH = Math.max(280, height - TV_WIDGET_CHROME_PX);
     const wrap = document.createElement("div");
     wrap.className = "tradingview-widget-container__widget w-full";
-    wrap.style.minHeight = `${height}px`;
+    wrap.style.width = "100%";
+    wrap.style.height = `${innerH}px`;
     el.appendChild(wrap);
 
     const script = document.createElement("script");
@@ -61,7 +66,8 @@ function TradingViewMount({
     script.type = "text/javascript";
     script.async = true;
     script.innerHTML = JSON.stringify({
-      autosize: true,
+      autosize: false,
+      height: innerH,
       symbol: tvSymbol,
       interval,
       timezone: "Etc/UTC",
@@ -96,7 +102,13 @@ function TradingViewMount({
     };
   }, [tvSymbol, interval, chartStyle, height, onPainted]);
 
-  return <div ref={rootRef} className="w-full tradingview-widget-container" style={{ minHeight: height }} />;
+  return (
+    <div
+      ref={rootRef}
+      className="w-full tradingview-widget-container"
+      style={{ height, width: "100%", minHeight: height }}
+    />
+  );
 }
 
 export type TradingViewCoinChartProps = {
@@ -138,7 +150,7 @@ export function TradingViewCoinChart({ coinId, symbol, live, onChartRevalidate }
   };
 
   const chartHeight =
-    typeof window !== "undefined" && window.matchMedia?.("(min-width: 1024px)").matches ? 520 : 440;
+    typeof window !== "undefined" && window.matchMedia?.("(min-width: 1024px)").matches ? 600 : 480;
 
   const waitingId = !coinId?.trim();
 
@@ -223,7 +235,11 @@ export function TradingViewCoinChart({ coinId, symbol, live, onChartRevalidate }
         </div>
       </div>
 
-      <div ref={wrapRef} className="relative w-full min-w-0" style={{ minHeight: chartHeight }}>
+      <div
+        ref={wrapRef}
+        className="relative w-full min-w-0 min-h-0"
+        style={{ height: chartHeight, minHeight: chartHeight }}
+      >
         {(showSkeleton || waitingId) && (
           <div
             className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6"
@@ -241,7 +257,7 @@ export function TradingViewCoinChart({ coinId, symbol, live, onChartRevalidate }
         )}
 
         {!waitingId && (
-          <div className="w-full opacity-100">
+          <div className="w-full h-full opacity-100" style={{ height: "100%" }}>
             <TradingViewMount
               key={`${tvSymbol}|${interval}|${styleMode}`}
               tvSymbol={tvSymbol}
