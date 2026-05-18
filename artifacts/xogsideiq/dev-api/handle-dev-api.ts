@@ -182,6 +182,10 @@ async function priceMap(): Promise<Map<string, number>> {
   return m;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 async function fetchUnlockProviderFeed(): Promise<unknown[]> {
   const url = process.env.UNLOCKS_API_URL;
   if (!url) return [];
@@ -195,11 +199,12 @@ async function fetchUnlockProviderFeed(): Promise<unknown[]> {
 
   const r = await fetch(url, { headers });
   if (!r.ok) return [];
-  const json = await r.json();
+  const json: unknown = await r.json();
   if (Array.isArray(json)) return json;
-  if (Array.isArray(json?.data)) return json.data;
-  if (Array.isArray(json?.events)) return json.events;
-  if (Array.isArray(json?.results)) return json.results;
+  if (!isRecord(json)) return [];
+  if (Array.isArray(json.data)) return json.data;
+  if (Array.isArray(json.events)) return json.events;
+  if (Array.isArray(json.results)) return json.results;
   return [];
 }
 
