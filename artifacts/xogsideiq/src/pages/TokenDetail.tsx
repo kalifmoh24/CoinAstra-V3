@@ -48,6 +48,13 @@ function fmtPct(n: number | null | undefined, showPlus = true): string {
   const s = n >= 0 && showPlus ? "+" : "";
   return `${s}${n.toFixed(2)}%`;
 }
+function fmtNum(n: number | null | undefined): string {
+  if (n == null) return "—";
+  if (n >= 1e12) return `${(n / 1e12).toFixed(2)}T`;
+  if (n >= 1e9) return `${(n / 1e9).toFixed(2)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
+  return n.toLocaleString();
+}
 
 const CARD = { background: "rgba(10,14,22,0.92)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16 };
 const CARD_HIGHLIGHT = { background: "rgba(10,14,22,0.92)", border: "1px solid rgba(41,98,255,0.2)", borderRadius: 16 };
@@ -55,13 +62,12 @@ const CARD_HIGHLIGHT = { background: "rgba(10,14,22,0.92)", border: "1px solid r
 const WORKSPACE_LINKS: { id: string; label: string }[] = [
   { id: "sec-overview", label: "Overview" },
   { id: "sec-markets", label: "Markets" },
+  { id: "sec-about", label: "About" },
   { id: "sec-news", label: "News" },
   { id: "sec-similar", label: "Similar Coins" },
-  { id: "sec-history", label: "Historic Data" },
   { id: "sec-ai", label: "AI Analysis" },
   { id: "sec-onchain", label: "On-Chain" },
-  { id: "sec-holders", label: "Holders" },
-  { id: "sec-social", label: "Social Sentiment" },
+  { id: "sec-social", label: "Community" },
   { id: "sec-tokenomics", label: "Tokenomics" },
 ];
 
@@ -688,16 +694,155 @@ function HoldersSection() {
   );
 }
 
+// ── Shared Sub-components ──────────────────────────────────────────────────────
+
+function StatPill({ label, value, sub, subColor }: { label: string; value: React.ReactNode; sub?: string; subColor?: string }) {
+  return (
+    <div className="rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="text-[9px] uppercase tracking-wider font-semibold mb-1 truncate" style={{ color: "#4a5068" }}>{label}</div>
+      <div className="text-[13px] font-mono font-bold text-white truncate">{value}</div>
+      {sub && <div className="text-[9px] mt-0.5 truncate" style={{ color: subColor ?? "#5a6072" }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ── About Coin Section ─────────────────────────────────────────────────────────
+
+function AboutCoin({ live, symbol }: { live: CoinLiveData | undefined; symbol: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const raw = live?.description?.replace(/<[^>]+>/g, "").trim() ?? "";
+  const MAX = 700;
+  if (!raw) return null;
+  const needsTrunc = raw.length > MAX;
+  const text = needsTrunc && !expanded ? raw.slice(0, MAX) + "…" : raw;
+  return (
+    <div className="rounded-2xl p-5" style={CARD}>
+      <div className="flex items-center gap-2 mb-3">
+        <BookOpen size={15} style={{ color: "#4d7fff" }} />
+        <span className="text-[13px] font-bold text-white">About {live?.name ?? symbol}</span>
+      </div>
+      <p className="text-[12px] leading-relaxed" style={{ color: "#8a92a6" }}>{text}</p>
+      {needsTrunc && (
+        <button onClick={() => setExpanded(e => !e)} className="mt-2 text-[11px] font-semibold" style={{ color: "#4d7fff" }}>
+          {expanded ? "Show less ▲" : "Read more ▼"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ── Community & Links Section ──────────────────────────────────────────────────
+
+function CommunityAndLinks({ live }: { live: CoinLiveData | undefined }) {
+  const c = live?.community;
+  const links = live?.links;
+  const hasFollowers = (c?.twitterFollowers ?? 0) > 0 || (c?.redditSubscribers ?? 0) > 0 || (c?.telegramUsers ?? 0) > 0;
+  const hasLinks = !!(links?.homepage || links?.twitter || links?.reddit || links?.whitepaper || (links?.github?.length ?? 0) > 0 || (links?.explorers?.filter(Boolean).length ?? 0) > 0);
+  if (!hasFollowers && !hasLinks) return null;
+  return (
+    <div className="rounded-2xl p-5" style={CARD}>
+      <div className="flex items-center gap-2 mb-4">
+        <Users size={15} style={{ color: "#4d7fff" }} />
+        <span className="text-[13px] font-bold text-white">Community & Links</span>
+      </div>
+      {hasFollowers && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+          {(c?.twitterFollowers ?? 0) > 0 && <StatPill label="Twitter Followers" value={(c!.twitterFollowers!).toLocaleString()} />}
+          {(c?.redditSubscribers ?? 0) > 0 && <StatPill label="Reddit Subscribers" value={(c!.redditSubscribers!).toLocaleString()} />}
+          {(c?.telegramUsers ?? 0) > 0 && <StatPill label="Telegram Users" value={(c!.telegramUsers!).toLocaleString()} />}
+        </div>
+      )}
+      {hasLinks && (
+        <div className="flex flex-wrap gap-2">
+          {links?.homepage && (
+            <a href={links.homepage} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:bg-white/[0.06]"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#8a92a6" }}>
+              <Globe size={12} /> Website <ExternalLink size={10} />
+            </a>
+          )}
+          {links?.whitepaper && (
+            <a href={links.whitepaper} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:bg-white/[0.06]"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#8a92a6" }}>
+              <FileText size={12} /> Whitepaper <ExternalLink size={10} />
+            </a>
+          )}
+          {links?.twitter && (
+            <a href={links.twitter.startsWith("http") ? links.twitter : `https://twitter.com/${links.twitter}`}
+              target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:bg-white/[0.06]"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#1DA1F2" }}>
+              <Twitter size={12} /> Twitter <ExternalLink size={10} />
+            </a>
+          )}
+          {links?.reddit && (
+            <a href={links.reddit} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:bg-white/[0.06]"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#FF4500" }}>
+              <MessageCircle size={12} /> Reddit <ExternalLink size={10} />
+            </a>
+          )}
+          {links?.github?.slice(0, 1).map(url => (
+            <a key={url} href={url} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:bg-white/[0.06]"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#8a92a6" }}>
+              <Github size={12} /> GitHub <ExternalLink size={10} />
+            </a>
+          ))}
+          {links?.explorers?.filter(Boolean).slice(0, 2).map(url => {
+            let label = "Explorer";
+            try { label = new URL(url).hostname.replace("www.", ""); } catch {}
+            return (
+              <a key={url} href={url} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:bg-white/[0.06]"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#8a92a6" }}>
+                <Layers size={12} /> {label} <ExternalLink size={10} />
+              </a>
+            );
+          })}
+        </div>
+      )}
+      {live?.platforms && Object.entries(live.platforms).filter(([, v]) => v).length > 0 && (
+        <div className="mt-4">
+          <div className="text-[9px] uppercase tracking-wider font-semibold mb-2" style={{ color: "#4a5068" }}>Contract Addresses</div>
+          {Object.entries(live.platforms).filter(([, v]) => v).slice(0, 4).map(([chain, addr]) => (
+            <div key={chain} className="flex items-center gap-2 p-2 rounded-lg mb-1" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <span className="text-[9px] font-bold capitalize shrink-0" style={{ color: "#5a6072", width: 80 }}>{chain}</span>
+              <code className="text-[10px] text-white font-mono truncate flex-1">{addr}</code>
+              <button onClick={() => navigator.clipboard.writeText(addr)}>
+                <Copy className="h-3 w-3 shrink-0" style={{ color: "#5a6072" }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── CMC-Style Price Header ─────────────────────────────────────────────────────
 
+type TfKey = "1h" | "24h" | "7d" | "30d" | "1y";
+
 function CmcPriceHeader({ live, symbol, isFetchingLive }: { live: CoinLiveData | undefined; symbol: string; isFetchingLive: boolean }) {
+  const [activeTf, setActiveTf] = useState<TfKey>("24h");
+
   const price = live?.price;
-  const ch24 = live?.priceChange24h ?? 0;
+  const tfMap: Record<TfKey, number | null | undefined> = {
+    "1h": live?.priceChange1h,
+    "24h": live?.priceChange24h ?? 0,
+    "7d": live?.priceChange7d,
+    "30d": live?.priceChange30d,
+    "1y": live?.priceChange1y,
+  };
+  const activeChange = tfMap[activeTf];
+  const isUp = (activeChange ?? 0) >= 0;
+
   const high24 = live?.high24h;
   const low24 = live?.low24h;
   const ath = live?.ath;
   const atl = live?.atl;
-  const isUp = ch24 >= 0;
 
   const rangePos =
     high24 != null && low24 != null && high24 !== low24 && price != null
@@ -714,151 +859,209 @@ function CmcPriceHeader({ live, symbol, isFetchingLive }: { live: CoinLiveData |
       ? Math.min(100, (live.circulatingSupply / live.maxSupply) * 100)
       : null;
 
+  const volMcap =
+    live?.marketCap && live.volume24h && live.marketCap > 0
+      ? `${((live.volume24h / live.marketCap) * 100).toFixed(2)}%`
+      : null;
+
   return (
-    <div className="rounded-2xl p-5 mb-4" style={{ background: "rgba(10,14,22,0.92)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16 }}>
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+    <div className="rounded-2xl p-5" style={CARD}>
+      {/* ── Identity Row ──────────────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-5">
         <div className="flex items-center gap-3">
           {live?.image && (
-            <img src={live.image} alt={live.name ?? symbol} className="w-10 h-10 rounded-full shrink-0"
-              style={{ boxShadow: "0 0 12px rgba(0,0,0,0.5)" }} />
+            <img src={live.image} alt={live.name ?? symbol} className="w-12 h-12 rounded-full shrink-0"
+              style={{ boxShadow: "0 0 16px rgba(0,0,0,0.6)" }} />
           )}
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[16px] font-black text-white">{live?.name ?? symbol}</span>
-              <span className="text-[11px] font-semibold uppercase px-1.5 py-0.5 rounded-md"
-                style={{ background: "rgba(255,255,255,0.06)", color: "#5a6072" }}>{symbol}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[20px] font-black text-white">{live?.name ?? symbol}</span>
+              <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-lg"
+                style={{ background: "rgba(255,255,255,0.07)", color: "#6b7389" }}>{symbol}</span>
               {live?.rank && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md"
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-lg"
                   style={{ background: "rgba(41,98,255,0.12)", color: "#4d7fff", border: "1px solid rgba(41,98,255,0.2)" }}>
                   Rank #{live.rank}
                 </span>
               )}
             </div>
             {live?.categories && live.categories.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {live.categories.slice(0, 3).map(c => (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {live.categories.slice(0, 5).map(c => (
                   <span key={c} className="text-[9px] px-1.5 py-0.5 rounded-md font-semibold"
-                    style={{ background: "rgba(124,58,237,0.12)", color: "#9f7aea", border: "1px solid rgba(124,58,237,0.2)" }}>{c}</span>
+                    style={{ background: "rgba(124,58,237,0.12)", color: "#9f7aea", border: "1px solid rgba(124,58,237,0.18)" }}>{c}</span>
                 ))}
               </div>
             )}
           </div>
         </div>
-
-        {/* Quick stats */}
-        <div className="flex items-center gap-4 flex-wrap">
-          <div className="text-right">
-            <div className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>Market Cap</div>
-            <div className="text-[13px] font-bold text-white font-mono">{fmtB(live?.marketCap)}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>Volume 24h</div>
-            <div className="text-[13px] font-bold text-white font-mono">{fmtB(live?.volume24h)}</div>
-          </div>
-          {live?.fdv != null && live.fdv > 0 && (
-            <div className="text-right">
-              <div className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>FDV</div>
-              <div className="text-[13px] font-bold text-white font-mono">{fmtB(live.fdv)}</div>
-            </div>
+        {/* Quick link chips */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {live?.links?.homepage && (
+            <a href={live.links.homepage} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:bg-white/[0.07]"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#8a92a6" }}>
+              <Globe size={11} /> Website
+            </a>
           )}
+          {live?.links?.whitepaper && (
+            <a href={live.links.whitepaper} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:bg-white/[0.07]"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#8a92a6" }}>
+              <FileText size={11} /> Whitepaper
+            </a>
+          )}
+          {live?.links?.twitter && (
+            <a href={live.links.twitter.startsWith("http") ? live.links.twitter : `https://twitter.com/${live.links.twitter}`}
+              target="_blank" rel="noreferrer"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:bg-white/[0.07]"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#1DA1F2" }}>
+              <Twitter size={11} /> Twitter
+            </a>
+          )}
+          {live?.links?.explorers?.filter(Boolean).slice(0, 1).map(url => {
+            let label = "Explorer";
+            try { label = new URL(url).hostname.replace("www.", ""); } catch {}
+            return (
+              <a key={url} href={url} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:bg-white/[0.07]"
+                style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#8a92a6" }}>
+                <Layers size={11} /> {label}
+              </a>
+            );
+          })}
         </div>
       </div>
 
-      {/* Price row */}
-      <div className="flex items-end gap-3 mb-4 flex-wrap">
-        <div className="text-[36px] font-black text-white font-mono tabular-nums tracking-tight leading-none">
-          {isFetchingLive && !price ? (
-            <div className="h-9 w-48 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.08)" }} />
-          ) : (
-            fmtP(price)
-          )}
-        </div>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[13px] font-black"
-            style={{
-              background: isUp ? "rgba(38,166,154,0.15)" : "rgba(239,83,80,0.15)",
-              color: isUp ? "#26a69a" : "#ef5350",
-              border: `1px solid ${isUp ? "rgba(38,166,154,0.25)" : "rgba(239,83,80,0.25)"}`,
-            }}>
-            {isUp ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
-            {Math.abs(ch24).toFixed(2)}%
-          </span>
-          <span className="text-[10px]" style={{ color: "#4a5068" }}>24h change</span>
-          {live?.priceChange7d != null && (
-            <span className="flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[11px] font-bold"
+      {/* ── Price + Timeframe Selector ──────────────────────────────────────── */}
+      <div className="mb-5">
+        <div className="flex items-end gap-4 flex-wrap mb-3">
+          <div className="text-[40px] font-black text-white font-mono tabular-nums tracking-tight leading-none">
+            {isFetchingLive && !price
+              ? <div className="h-10 w-52 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.08)" }} />
+              : fmtP(price)}
+          </div>
+          {activeChange != null && (
+            <span className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-[15px] font-black mb-1"
               style={{
-                background: live.priceChange7d >= 0 ? "rgba(38,166,154,0.08)" : "rgba(239,83,80,0.08)",
-                color: live.priceChange7d >= 0 ? "#26a69a" : "#ef5350",
+                background: isUp ? "rgba(38,166,154,0.15)" : "rgba(239,83,80,0.15)",
+                color: isUp ? "#26a69a" : "#ef5350",
+                border: `1px solid ${isUp ? "rgba(38,166,154,0.25)" : "rgba(239,83,80,0.25)"}`,
               }}>
-              {live.priceChange7d >= 0 ? "+" : ""}{live.priceChange7d.toFixed(2)}% 7d
+              {isUp ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+              {Math.abs(activeChange).toFixed(2)}%
             </span>
           )}
         </div>
+        {/* Timeframe selector pills */}
+        <div className="flex items-center gap-0.5 p-0.5 rounded-xl w-fit"
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          {(["1h", "24h", "7d", "30d", "1y"] as TfKey[]).map(tf => {
+            const v = tfMap[tf];
+            const up = (v ?? 0) >= 0;
+            return (
+              <button key={tf} onClick={() => setActiveTf(tf)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all"
+                style={{
+                  background: activeTf === tf ? "rgba(41,98,255,0.2)" : "transparent",
+                  color: activeTf === tf ? "#4d7fff" : "#5a6072",
+                }}>
+                {tf}
+                {v != null && (
+                  <span className="text-[9px] font-bold" style={{ color: up ? "#26a69a" : "#ef5350" }}>
+                    {up ? "+" : ""}{v.toFixed(1)}%
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* 24h Price Range Bar */}
+      {/* ── Comprehensive Stats Grid ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+        <StatPill label="Market Cap" value={fmtB(live?.marketCap)}
+          sub={live?.rank ? `Rank #${live.rank}` : undefined} />
+        <StatPill label="Fully Diluted Val." value={live?.fdv && live.fdv > 0 ? fmtB(live.fdv) : "—"} />
+        <StatPill label="Volume 24h" value={fmtB(live?.volume24h)}
+          sub={volMcap ? `${volMcap} of mcap` : undefined} />
+        <StatPill label="Vol / MCap" value={volMcap ?? "—"} />
+        <StatPill
+          label="Circ. Supply"
+          value={live?.circulatingSupply ? `${fmtNum(live.circulatingSupply)} ${symbol}` : "—"}
+          sub={supplyPct != null ? `${supplyPct.toFixed(1)}% of max` : undefined}
+        />
+        <StatPill label="Total Supply" value={live?.totalSupply ? fmtNum(live.totalSupply) : "∞"} />
+        <StatPill label="Max Supply" value={live?.maxSupply ? fmtNum(live.maxSupply) : "∞"} />
+        <StatPill
+          label="All-Time High"
+          value={fmtP(live?.ath)}
+          sub={live?.athChange != null
+            ? `${live.athChange.toFixed(1)}% from ATH`
+            : live?.athDate ? new Date(live.athDate).toLocaleDateString() : undefined}
+          subColor={live?.athChange != null ? "#ef5350" : undefined}
+        />
+      </div>
+
+      {/* ── 24h Price Range Bar ────────────────────────────────────────────────── */}
       {high24 != null && low24 != null && (
         <div className="mb-3">
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>24h Range</span>
-            <div className="flex items-center gap-2 text-[10px] font-mono">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>24h Price Range</span>
+            <div className="flex items-center gap-2 text-[11px] font-mono">
               <span style={{ color: "#ef5350" }}>{fmtP(low24)}</span>
               <span style={{ color: "#3a4058" }}>—</span>
               <span style={{ color: "#26a69a" }}>{fmtP(high24)}</span>
             </div>
           </div>
-          <div className="relative h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.07)" }}>
-            <div className="absolute h-full rounded-full"
+          <div className="relative h-2 rounded-full" style={{ background: "rgba(255,255,255,0.07)" }}>
+            <div className="absolute left-0 h-full rounded-full"
               style={{ width: `${Math.max(2, Math.min(98, rangePos ?? 50))}%`,
                 background: "linear-gradient(90deg, #ef5350, #f7931a 50%, #26a69a)" }} />
-            <div className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-white shadow-lg"
+            <div className="absolute top-1/2 w-3 h-3 rounded-full border-2 border-white"
               style={{ left: `${Math.max(2, Math.min(96, rangePos ?? 50))}%`,
                 transform: "translate(-50%, -50%)", background: "#fff",
-                boxShadow: "0 0 6px rgba(255,255,255,0.4)" }} />
+                boxShadow: "0 0 8px rgba(255,255,255,0.5)" }} />
           </div>
         </div>
       )}
 
-      {/* ATH / ATL Range Bar */}
+      {/* ── ATH / ATL Range Bar ────────────────────────────────────────────────── */}
       {ath != null && ath > 0 && atl != null && atl > 0 && (
         <div className="mb-3">
-          <div className="flex justify-between items-center mb-1.5">
+          <div className="flex justify-between items-center mb-2">
             <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>All-Time Range</span>
-            <div className="flex items-center gap-2 text-[9px] font-mono">
-              <span style={{ color: "#4a5068" }}>ATL: {fmtP(atl)}</span>
+            <div className="flex items-center gap-3 text-[9px] font-mono">
+              <span style={{ color: "#4a5068" }}>
+                ATL: {fmtP(atl)}{live?.atlDate ? ` (${new Date(live.atlDate).getFullYear()})` : ""}
+              </span>
               <span style={{ color: "#3a4058" }}>→</span>
-              <span style={{ color: "#4a5068" }}>ATH: {fmtP(ath)}</span>
+              <span style={{ color: "#4a5068" }}>
+                ATH: {fmtP(ath)}{live?.athDate ? ` (${new Date(live.athDate).getFullYear()})` : ""}
+              </span>
               {live?.athChange != null && (
-                <span style={{ color: "#ef5350" }}>({fmtPct(live.athChange)} from ATH)</span>
+                <span style={{ color: "#ef5350" }}>{fmtPct(live.athChange)} from ATH</span>
               )}
             </div>
           </div>
-          <div className="relative h-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
-            <div className="absolute h-full rounded-full"
+          <div className="relative h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <div className="absolute left-0 h-full rounded-full"
               style={{ width: `${Math.max(1, Math.min(99, athPos ?? 50))}%`,
                 background: "linear-gradient(90deg, #ef5350, #f7931a, #2962ff, #26a69a)" }} />
           </div>
           <div className="flex justify-between text-[8px] mt-1 font-mono" style={{ color: "#3a4058" }}>
-            <span>ATL</span>
-            <span>ATH</span>
+            <span>ATL</span><span>ATH</span>
           </div>
         </div>
       )}
 
-      {/* Circulating Supply Bar */}
+      {/* ── Circulating Supply Bar ─────────────────────────────────────────────── */}
       {supplyPct != null && live?.circulatingSupply && (
         <div>
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>Circulating Supply</span>
-            <div className="flex items-center gap-2 text-[9px] font-mono">
-              <span className="text-white">{supplyPct.toFixed(1)}%</span>
-              <span style={{ color: "#4a5068" }}>
-                {live.circulatingSupply >= 1e9
-                  ? `${(live.circulatingSupply / 1e9).toFixed(2)}B`
-                  : `${(live.circulatingSupply / 1e6).toFixed(2)}M`} {symbol}
-                {live.maxSupply ? ` / ${live.maxSupply >= 1e9 ? `${(live.maxSupply / 1e9).toFixed(2)}B` : `${(live.maxSupply / 1e6).toFixed(2)}M`} max` : ""}
-              </span>
+            <div className="text-[10px] font-mono" style={{ color: "#8a92a6" }}>
+              {supplyPct.toFixed(1)}% — {fmtNum(live.circulatingSupply)} / {live.maxSupply ? fmtNum(live.maxSupply) : "∞"} {symbol}
             </div>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
@@ -953,14 +1156,34 @@ export default function TokenDetail() {
               onChartRevalidate={setChartBgSync}
             />
 
-            <div id="sec-overview" className="scroll-mt-24 space-y-4">
-              <div className="rounded-2xl p-4" style={CARD}>
-                <div className="text-[12px] font-bold text-white mb-3">Snapshot</div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <StatCard label="ATH" value={fmtP(live?.ath)} sub={live?.athDate ? new Date(live.athDate).toLocaleDateString() : undefined} />
-                  <StatCard label="ATH Δ" value={fmtPct(live?.athChange)} color={(live?.athChange ?? 0) >= 0 ? "#26a69a" : "#ef5350"} />
-                  <StatCard label="30d" value={fmtPct(live?.priceChange30d)} color={(live?.priceChange30d ?? 0) >= 0 ? "#26a69a" : "#ef5350"} />
-                  <StatCard label="1y" value={fmtPct(live?.priceChange1y)} color={(live?.priceChange1y ?? 0) >= 0 ? "#26a69a" : "#ef5350"} />
+            <div id="sec-overview" className="scroll-mt-24">
+              <div className="rounded-2xl p-5" style={CARD}>
+                <div className="flex items-center gap-2 mb-4">
+                  <Activity className="h-4 w-4" style={{ color: "#4d7fff" }} />
+                  <span className="text-[13px] font-bold text-white">Price Statistics</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+                  {([
+                    { label: "24h Low", value: fmtP(live?.low24h), color: "#ef5350" },
+                    { label: "24h High", value: fmtP(live?.high24h), color: "#26a69a" },
+                    { label: "7d Change", value: fmtPct(live?.priceChange7d), color: (live?.priceChange7d ?? 0) >= 0 ? "#26a69a" : "#ef5350" },
+                    { label: "30d Change", value: fmtPct(live?.priceChange30d), color: (live?.priceChange30d ?? 0) >= 0 ? "#26a69a" : "#ef5350" },
+                    { label: "1y Change", value: fmtPct(live?.priceChange1y), color: (live?.priceChange1y ?? 0) >= 0 ? "#26a69a" : "#ef5350" },
+                    { label: "All-Time High", value: fmtP(live?.ath), sub: live?.athDate ? new Date(live.athDate).toLocaleDateString() : undefined },
+                    { label: "% from ATH", value: fmtPct(live?.athChange), color: "#ef5350" },
+                    { label: "All-Time Low", value: fmtP(live?.atl), sub: live?.atlDate ? new Date(live.atlDate).toLocaleDateString() : undefined },
+                    { label: "Market Cap Rank", value: live?.rank ? `#${live.rank}` : "—" },
+                    { label: "FDV / Market Cap", value: live?.fdv && live?.marketCap && live.marketCap > 0 ? (live.fdv / live.marketCap).toFixed(2) + "x" : "—" },
+                  ] as { label: string; value: string; color?: string; sub?: string }[]).map(row => (
+                    <div key={row.label} className="flex items-center justify-between py-2.5"
+                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <span className="text-[11px]" style={{ color: "#5a6072" }}>{row.label}</span>
+                      <div className="text-right">
+                        <span className="text-[12px] font-mono font-bold" style={{ color: row.color ?? "white" }}>{row.value}</span>
+                        {row.sub && <div className="text-[9px]" style={{ color: "#4a5068" }}>{row.sub}</div>}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -978,6 +1201,11 @@ export default function TokenDetail() {
                   loading={isEnriching && !live?.platforms}
                 />
               </div>
+            </div>
+
+            <div id="sec-about" className="scroll-mt-24 space-y-4">
+              <AboutCoin live={live} symbol={symbol} />
+              <CommunityAndLinks live={live} />
             </div>
 
             <div id="sec-news" className="scroll-mt-24">

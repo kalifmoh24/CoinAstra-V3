@@ -35,6 +35,7 @@ export interface CoinLiveData {
   name: string;
   image?: string;
   price: number;
+  priceChange1h?: number;
   priceChange24h: number;
   priceChange7d: number;
   priceChange30d: number;

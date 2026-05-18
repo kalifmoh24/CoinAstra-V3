@@ -32,6 +32,7 @@ type MarketRow = {
   low_24h: number;
   price_change_24h: number;
   price_change_percentage_24h: number;
+  price_change_percentage_1h_in_currency?: number;
   price_change_percentage_7d_in_currency?: number;
   price_change_percentage_30d_in_currency?: number;
   circulating_supply: number;
@@ -69,6 +70,7 @@ function buildLiveFromMetaAndMarket(
     name: meta.name,
     image: meta.image || m?.image,
     price: price ?? 0,
+    priceChange1h: m?.price_change_percentage_1h_in_currency ?? undefined,
     priceChange24h: typeof ch24 === "number" && Number.isFinite(ch24) ? ch24 : 0,
     priceChange7d: m?.price_change_percentage_7d_in_currency ?? meta.ch7d ?? 0,
     priceChange30d: m?.price_change_percentage_30d_in_currency ?? 0,
@@ -110,6 +112,7 @@ function mergePersistedLive(cache: CoinLiveData | undefined, built: CoinLiveData
     circulatingSupply: built.circulatingSupply > 0 ? built.circulatingSupply : cache.circulatingSupply,
     totalSupply: built.totalSupply ?? cache.totalSupply,
     maxSupply: built.maxSupply ?? cache.maxSupply,
+    priceChange1h: built.priceChange1h ?? cache.priceChange1h,
     priceChange24h: Number.isFinite(built.priceChange24h) ? built.priceChange24h : cache.priceChange24h,
     priceChange7d: built.priceChange7d ?? cache.priceChange7d,
     priceChange30d: built.priceChange30d ?? cache.priceChange30d,
@@ -159,7 +162,7 @@ export function useTokenDetail(symbol: string | undefined, coinIdParam?: string 
     queryKey: ["token-live-market", resolvedId],
     queryFn: async () => {
       if (!resolvedId) return [] as MarketRow[];
-      const url = `/api/coins/markets-by-ids?ids=${encodeURIComponent(resolvedId)}&price_change_percentage=7d,30d`;
+      const url = `/api/coins/markets-by-ids?ids=${encodeURIComponent(resolvedId)}&price_change_percentage=1h,7d,30d`;
       return cachedJsonFetch<MarketRow[]>(url, API_CACHE.markets);
     },
     enabled: !!resolvedId,
