@@ -150,7 +150,7 @@ function TradingViewMount({
 
     el.innerHTML = "";
     const wrap = document.createElement("div");
-    wrap.className = "tradingview-widget-container__widget w-full";
+    wrap.className = "tradingview-widget-container__widget w-full h-full";
     wrap.style.height = `${height}px`;
     wrap.style.minHeight = `${height}px`;
     el.appendChild(wrap);
@@ -160,7 +160,9 @@ function TradingViewMount({
     script.type = "text/javascript";
     script.async = true;
     script.innerHTML = JSON.stringify({
-      autosize: true,
+      autosize: false,
+      width: "100%",
+      height,
       symbol: tvSymbol,
       interval,
       timezone: "Etc/UTC",
@@ -511,6 +513,7 @@ export function TradingViewCoinChart({
           style={{
             height: chartHeight,
             minHeight: chartHeight,
+            maxHeight: chartHeight,
             background: "#060a12",
             border: "1px solid rgba(120,143,205,0.18)",
             boxShadow:
