@@ -134,6 +134,36 @@ function memoryTokenToListRow(t: MemoryImportedToken) {
   };
 }
 
+async function fetchUnlockProviderFeed(): Promise<unknown[]> {
+  const url = process.env.UNLOCKS_API_URL;
+  if (!url) return [];
+
+  const headers: Record<string, string> = { Accept: "application/json" };
+  const key = process.env.UNLOCKS_API_KEY;
+  if (key) {
+    headers.Authorization = `Bearer ${key}`;
+    headers["X-API-Key"] = key;
+  }
+
+  const r = await fetch(url, { headers });
+  if (!r.ok) return [];
+  const json = await r.json();
+  if (Array.isArray(json)) return json;
+  if (Array.isArray(json?.data)) return json.data;
+  if (Array.isArray(json?.events)) return json.events;
+  if (Array.isArray(json?.results)) return json.results;
+  return [];
+}
+
+router.get("/unlocks/upcoming", async (_req, res): Promise<void> => {
+  const events = await fetchUnlockProviderFeed().catch(() => []);
+  res.json({
+    data: events,
+    providerConfigured: Boolean(process.env.UNLOCKS_API_URL),
+    refreshedAt: new Date().toISOString(),
+  });
+});
+
 router.get("/tokens", async (req, res): Promise<void> => {
   const parsed = ListTokensQueryParams.safeParse(req.query);
   const q = parsed.success ? parsed.data.q?.toLowerCase() : undefined;

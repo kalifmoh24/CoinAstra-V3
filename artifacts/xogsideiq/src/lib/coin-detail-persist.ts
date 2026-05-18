@@ -55,7 +55,7 @@ export function isDisplayablePrice(n: number | null | undefined): boolean {
   return n != null && Number.isFinite(n) && n > 0;
 }
 
-/** Sync read: prefer CoinGecko id, then last cache for this ticker. */
+/** Sync read: prefer asset id, then last cache for this ticker. */
 export function readPersistedDetail(coinId: string | undefined, symbolUpper: string): PersistedSnapshot | null {
   if (coinId) {
     const byId = readSnapshotRaw(lsKey(coinId));

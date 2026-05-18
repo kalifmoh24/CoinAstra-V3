@@ -376,7 +376,7 @@ function OnChainTab({ live }: { live: CoinLiveData | undefined; symbol: string }
   return (
     <div className="space-y-4">
       <div className="rounded-xl p-4 text-[11px] leading-relaxed" style={{ background: "rgba(41,98,255,0.08)", border: "1px solid rgba(41,98,255,0.15)", color: "#8892a4" }}>
-        On-chain wallet and DEX-level analytics are not available in this build. The metrics below are derived only from live CoinGecko market fields for this coin.
+        On-chain wallet and DEX-level analytics are not available in this build. The metrics below are derived only from live market fields for this coin.
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {cards.map(c => (
@@ -387,7 +387,7 @@ function OnChainTab({ live }: { live: CoinLiveData | undefined; symbol: string }
   );
 }
 
-// ── Social Tab (CoinGecko community + official links) ──────────────────────────
+// ── Social Tab (community + official links) ────────────────────────────────────
 
 function SocialTab({ live }: { live: CoinLiveData | undefined; symbol: string }) {
   const c = live?.community;
@@ -412,7 +412,7 @@ function SocialTab({ live }: { live: CoinLiveData | undefined; symbol: string })
         </div>
       ) : (
         <div className="rounded-xl p-4 text-[11px]" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "#8892a4" }}>
-          CoinGecko has not published community follower counts for this asset. Use the official links below for social channels.
+          Community follower counts are not available for this asset. Use the official links below for social channels.
         </div>
       )}
 
@@ -688,7 +688,7 @@ function HoldersSection() {
       <Users className="h-8 w-8 mx-auto mb-2" style={{ color: "#3a4058" }} />
       <p className="text-[12px] font-bold text-white mb-1">Holder analytics</p>
       <p className="text-[11px] leading-relaxed" style={{ color: "#5a6072" }}>
-        CoinGecko does not expose wallet-level holders here. Connect an on-chain provider to unlock this block.
+        Wallet-level holder data is not available here. Connect an on-chain provider to unlock this block.
       </p>
     </div>
   );
@@ -1119,7 +1119,7 @@ export default function TokenDetail() {
           <AlertTriangle className="h-8 w-8 mx-auto mb-3" style={{ color: "#f7931a" }} />
           <p className="text-[14px] font-bold text-white mb-1">Could not load {symbol}</p>
           <p className="text-[12px]" style={{ color: "#5a6072" }}>
-            CoinGecko may be rate-limited. Retry shortly — cached data is shown when available.
+            Market data may be temporarily rate-limited. Retry shortly — cached data is shown when available.
           </p>
         </div>
       </div>
@@ -1220,7 +1220,7 @@ export default function TokenDetail() {
               <div className="rounded-2xl p-5 space-y-2" style={CARD}>
                 <div className="text-[12px] font-bold text-white">Historic data</div>
                 <p className="text-[11px] leading-relaxed" style={{ color: "#8892a4" }}>
-                  Long-range history, indicators, and drawings are powered by the embedded TradingView chart above. CoinGecko remains the source for ATH/ATL and market metadata on this page.
+                  Long-range history, indicators, and drawings are powered by the embedded TradingView chart above. CoinAstra keeps ATH/ATL and market metadata synced on this page.
                 </p>
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
                   <div>ATH: {fmtP(live?.ath)}</div>
@@ -1268,3 +1268,4 @@ export default function TokenDetail() {
     </div>
   );
 }
+

@@ -63,7 +63,7 @@ type SortDir = "asc" | "desc";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-// Maps display label → CoinGecko category ID (null = All)
+// Maps display label → market category ID (null = All)
 import { researchHref } from "@/lib/research-url";
 export { researchHref };
 
@@ -903,7 +903,7 @@ export default function Markets() {
               </div>
               <p className="text-white font-bold text-base mb-1">Market data unavailable</p>
               <p className="text-[12px] mb-4" style={{ color:"#5a6072" }}>
-                {(marketsListErr as Error)?.message ?? "CoinGecko API rate-limited"} · Retrying in {countdown}s
+                {(marketsListErr as Error)?.message ?? "Market data rate-limited"} · Retrying in {countdown}s
               </p>
               <button onClick={() => refetchMarketsList()}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[12px] font-bold"
@@ -1500,7 +1500,7 @@ export default function Markets() {
                 <AlertCircle size={28} className="text-[#ef5350]" />
               </div>
               <p className="text-white font-bold text-base mb-1">Market data unavailable</p>
-              <p className="text-[12px] mb-1" style={{ color:"#787b86" }}>{(marketsListErr as Error)?.message ?? "CoinGecko API rate-limited."}</p>
+              <p className="text-[12px] mb-1" style={{ color:"#787b86" }}>{(marketsListErr as Error)?.message ?? "Market data rate-limited."}</p>
               <p className="text-[11px] mb-5" style={{ color:"#5a6072" }}>Auto-retrying in {countdown}s</p>
               <button onClick={() => refetchMarketsList()}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[12px] font-bold"
@@ -1805,14 +1805,14 @@ export default function Markets() {
               <span className="font-bold text-white">{opt.total}</span>
               <span style={{ color: "#5a6072" }}>
                 {" "}
-                · Scroll for more · Live prices cached 30s (CoinGecko)
+                · Scroll for more · Live prices cached 30s
               </span>
             </div>
           )}
 
           <div className="mt-4 text-center">
             <p className="text-[9px]" style={{ color:"#3a3e4a" }}>
-              Market data provided by CoinGecko API · Prices update every 30 seconds · For informational purposes only
+              Prices update every 30 seconds · For informational purposes only
             </p>
           </div>
           <div className="h-6" />
@@ -1821,3 +1821,4 @@ export default function Markets() {
     </div>
   );
 }
+

@@ -69,7 +69,7 @@ function TokenDistributionBar({ circulating, max }: { circulating?: number; max?
   if (!circulating || !max || max <= 0) {
     return (
       <div className="rounded-xl p-4 text-[10px] leading-relaxed" style={{ background: "rgba(255,255,255,0.03)", color: "#5a6072" }}>
-        Circulating vs max supply ratio unavailable — CoinGecko did not publish both values for this asset.
+        Circulating vs max supply ratio unavailable — the live feed did not publish both values for this asset.
       </div>
     );
   }
@@ -329,13 +329,13 @@ export function TokenIntelligencePanel({
           <div className="rounded-xl p-3" style={{ background: "rgba(255,255,255,0.02)" }}>
             <Row label="Market cap" value={fmtB(live?.marketCap)} />
             <Row label="FDV" value={fmtB(live?.fdv)} />
-            <Row label="Volume (24h)" value={fmtB(live?.volume24h)} hint="24h quote volume from CoinGecko" />
+            <Row label="Volume (24h)" value={fmtB(live?.volume24h)} hint="24h quote volume from live feed" />
             <Row label="Liquidity proxy" value={vmr != null ? `${vmr.toFixed(2)}% turnover` : "—"} hint="Volume ÷ market cap — not order-book depth" />
             <Row label="ATH" value={fmtP(live?.ath)} hint={live?.athDate ? new Date(live.athDate).toLocaleDateString() : undefined} />
             <Row label="ATL" value={fmtP(live?.atl)} hint={live?.atlDate ? new Date(live.atlDate).toLocaleDateString() : undefined} />
             <Row label="Volatility score" value={`${volatilityScore}/100`} hint="From live |24h| & |7d| moves" />
             <Row label="Dominance (est.)" value={dom != null ? `${dom.toFixed(3)}%` : "—"} hint="Coin mcap ÷ total crypto mcap" />
-            <Row label="Holders" value="—" hint="Not available from CoinGecko REST" />
+            <Row label="Holders" value="—" hint="Not available from the current feed" />
           </div>
         </section>
 
@@ -355,7 +355,7 @@ export function TokenIntelligencePanel({
               }
             />
             <Row label="Inflation / issuance" value={inflationHint.length > 60 ? "See circulating vs max" : inflationHint} />
-            <Row label="Vesting / unlocks" value="—" hint="Not in CoinGecko coin payload for this screen" />
+            <Row label="Vesting / unlocks" value="—" hint="Not in the current market payload for this screen" />
             <TokenDistributionBar circulating={live?.circulatingSupply} max={live?.maxSupply} />
           </div>
         </section>
@@ -415,7 +415,7 @@ export function TokenIntelligencePanel({
               <Row label="Twitter followers" value={live?.community?.twitterFollowers?.toLocaleString() ?? "—"} />
               <Row label="Reddit subscribers" value={live?.community?.redditSubscribers?.toLocaleString() ?? "—"} />
               <Row label="Telegram users" value={live?.community?.telegramUsers?.toLocaleString() ?? "—"} />
-              <Row label="Discord" value="—" hint="Not exposed in this CoinGecko field set" />
+              <Row label="Discord" value="—" hint="Not exposed in this field set" />
               <Row label="Community score (est.)" value={communityScore != null ? `${communityScore}/100` : "—"} hint="Log-scaled from public follower counts" />
               <Row label="Social trend" value={fmtPct(live?.priceChange24h)} hint="Price momentum as crude engagement proxy" />
             </div>
@@ -425,7 +425,7 @@ export function TokenIntelligencePanel({
         <section>
           <SectionTitle icon={<BrainCircuit className="h-3.5 w-3.5" style={{ color: "#4d7fff" }} />}>AI intelligence (heuristic)</SectionTitle>
           <div className="rounded-xl p-3 space-y-2 text-[10px]" style={{ background: "rgba(41,98,255,0.06)", border: "1px solid rgba(41,98,255,0.12)" }}>
-            <p style={{ color: "#8892a4" }}>Signals are computed locally from live CoinGecko deltas — not a trading model.</p>
+            <p style={{ color: "#8892a4" }}>Signals are computed locally from live market deltas — not a trading model.</p>
             <Row label="Confidence" value={`${ai.confidence}%`} />
             <Row label={predD.label} value={predD.text} />
             <Row label={predW.label} value={predW.text} />
@@ -505,3 +505,4 @@ export function TokenIntelligencePanel({
     </div>
   );
 }
+

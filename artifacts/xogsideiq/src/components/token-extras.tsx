@@ -50,7 +50,7 @@ export function ExchangeListings({
         </div>
       ) : !exchanges?.length ? (
         <p className="text-[11px]" style={{ color: "#5a6072" }}>
-          No exchange tickers returned from CoinGecko for this asset.
+          No exchange tickers returned for this asset.
         </p>
       ) : (
         <div className="space-y-1.5 max-h-64 overflow-y-auto">

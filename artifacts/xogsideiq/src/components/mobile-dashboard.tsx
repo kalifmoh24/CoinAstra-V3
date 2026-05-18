@@ -1024,7 +1024,7 @@ export function MobileDashboard() {
         </div>
 
         {/* ══════════════════════════════════════════════════════════════
-            TRENDING (live from CoinGecko when available)
+            TRENDING (live feed when available)
         ══════════════════════════════════════════════════════════════ */}
         {trendingCoins.length > 0 && (
           <div className="px-4 pt-0 pb-2">

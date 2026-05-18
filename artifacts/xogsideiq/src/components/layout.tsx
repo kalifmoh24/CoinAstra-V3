@@ -226,7 +226,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     {searchFetching && <span className="text-[8px]" style={{ color: "#5a6072" }}>Searching…</span>}
                   </div>
 
-                  {/* Coin results from CoinGecko */}
+                  {/* Coin results from market feed */}
                   {hasQuery && coinResults.length > 0 && (
                     <>
                       <div className="px-3 pt-2 pb-0.5">

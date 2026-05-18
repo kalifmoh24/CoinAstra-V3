@@ -1,5 +1,5 @@
 /**
- * Local coin metadata index — instant lookup without CoinGecko API.
+ * Local coin metadata index — instant lookup without network round trips.
  * Source: /data/coins-market-metadata.json (generated at build time).
  */
 

@@ -1,4 +1,4 @@
-/** Deduplicate coin rows by CoinGecko id (first occurrence wins). */
+/** Deduplicate coin rows by asset id (first occurrence wins). */
 export function dedupeById<T extends { id: string }>(rows: T[]): T[] {
   const seen = new Set<string>();
   const out: T[] = [];

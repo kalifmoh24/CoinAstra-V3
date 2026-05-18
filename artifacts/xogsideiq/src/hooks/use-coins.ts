@@ -72,7 +72,7 @@ export interface CoinLiveData {
     explorers?: string[];
   };
   description?: string;
-  /** Top exchange listings from CoinGecko tickers */
+  /** Top exchange listings from market tickers */
   exchanges?: { name: string; pair: string; volume?: number }[];
   trendingScore?: string;
 }
@@ -94,7 +94,7 @@ export function useTokenLive(symbol: string | undefined, coinId?: string | null)
   });
 }
 
-// ── CoinGecko coin details (by CoinGecko ID) ──────────────────────────────────
+// ── Coin details (by asset ID) ─────────────────────────────────────────────────
 
 export function useCoinById(coinId: string | undefined) {
   return useQuery({
@@ -118,7 +118,7 @@ export interface ChartData {
   total_volumes: [number, number][];
 }
 
-/** UI chart range — maps to CoinGecko `market_chart` / `ohlc` params */
+/** UI chart range — maps to market chart / ohlc params */
 export type ChartTimeframeKey = "1h" | "24h" | "7d" | "1m" | "3m" | "1y" | "all";
 
 export function chartLineDaysParam(tf: ChartTimeframeKey): number | "max" {
@@ -139,13 +139,13 @@ export function chartLineDaysParam(tf: ChartTimeframeKey): number | "max" {
   }
 }
 
-/** CoinGecko OHLC only supports discrete day counts — cap “all” at 365 */
+/** OHLC endpoint supports discrete day counts — cap “all” at 365 */
 export function chartOhlcDaysParam(tf: ChartTimeframeKey): number {
   const d = chartLineDaysParam(tf);
   return d === "max" ? 365 : d;
 }
 
-/** Trim intraday chart to recent window (CoinGecko hourly when days=1). */
+/** Trim intraday chart to recent window (hourly when days=1). */
 export function sliceChartForDisplay(raw: ChartData | undefined, tf: ChartTimeframeKey): ChartData | undefined {
   if (!raw?.prices?.length) return raw;
   if (tf !== "1h") return raw;
@@ -184,7 +184,7 @@ export function useTokenChart(symbol: string | undefined, days: number) {
   });
 }
 
-/** Fetch chart directly by CoinGecko ID — persists to IndexedDB; hydrates cache into React Query. */
+/** Fetch chart directly by asset ID — persists to IndexedDB; hydrates cache into React Query. */
 export function useCoinChart(coinId: string | undefined, tf: ChartTimeframeKey, symbol?: string) {
   const qc = useQueryClient();
   const normalizedId = coinId?.toLowerCase();
@@ -279,7 +279,7 @@ export function useCoinOHLC(coinId: string | undefined, tf: ChartTimeframeKey) {
   });
 }
 
-// ── Coin categories (CoinGecko universe) ──────────────────────────────────────
+// ── Coin categories (market universe) ─────────────────────────────────────────
 
 export interface CoinCategory {
   id: string;
@@ -313,7 +313,7 @@ export interface CoinMarketItem {
   ath_change_percentage: number;
 }
 
-/** All CoinGecko categories sorted by market cap */
+/** All market categories sorted by market cap */
 export function useCoinCategories() {
   return useQuery<CoinCategory[]>({
     queryKey: ["ca-coin-categories"],
@@ -327,7 +327,7 @@ export function useCoinCategories() {
   });
 }
 
-/** Coins in a specific CoinGecko category */
+/** Coins in a specific market category */
 export function useCategoryCoins(categoryId: string | null, page: number) {
   return useQuery<CoinMarketItem[]>({
     queryKey: ["ca-category-coins", categoryId, page],
@@ -370,7 +370,7 @@ export function usePlatformTokenSymbols() {
   });
 }
 
-/** Import a coin from CoinGecko into the platform */
+/** Import a coin into the platform */
 export function useImportCoin() {
   const qc = useQueryClient();
   return useMutation({

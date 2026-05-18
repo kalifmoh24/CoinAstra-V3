@@ -175,7 +175,7 @@ export function TradingViewCoinChart({ coinId, symbol, live, onChartRevalidate }
                 </span>
               </div>
               <p className="text-[10px] mt-0.5 leading-snug" style={{ color: "#6b7389" }}>
-                Historical candles and indicators by TradingView. Market stats stay on CoinGecko.
+                Historical candles and indicators by TradingView. Market stats stay inside CoinAstra.
               </p>
             </div>
             {pct24 != null && Number.isFinite(pct24) ? (

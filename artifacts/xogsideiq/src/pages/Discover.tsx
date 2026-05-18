@@ -331,7 +331,7 @@ export default function Discover() {
               <h1 className="text-[22px] font-black text-white tracking-tight">Coin Universe</h1>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                 style={{ background: "rgba(41,98,255,0.15)", color: BLUE }}>
-                Powered by CoinGecko
+                CoinAstra Market Feed
               </span>
             </div>
             <p className="text-[12px]" style={{ color: "#4a5068" }}>
@@ -451,7 +451,7 @@ export default function Discover() {
                     <Globe className="h-4 w-4" style={{ color: BLUE }} />
                     <span className="text-[14px] font-black text-white">All Coins</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded-lg" style={{ background: "rgba(41,98,255,0.12)", color: BLUE }}>
-                      Top coins by market cap · Page {page} (CoinGecko)
+                      Top coins by market cap · Page {page}
                     </span>
                   </>
                 )}
@@ -464,7 +464,7 @@ export default function Discover() {
               <input
                 value={coinSearch}
                 onChange={e => setCoinSearch(e.target.value)}
-                placeholder="Search CoinGecko (min 2 chars) or filter this page…"
+                placeholder="Search coins (min 2 chars) or filter this page…"
                 className="text-[11px] pl-7 pr-7 py-1.5 rounded-lg outline-none w-40"
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}
               />
@@ -593,3 +593,4 @@ export default function Discover() {
     </div>
   );
 }
+

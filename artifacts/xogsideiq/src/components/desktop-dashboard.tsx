@@ -1007,7 +1007,7 @@ export function DesktopDashboard() {
               {now.toUTCString().slice(17, 25)} UTC
             </span>
           </div>
-          <div className="text-[9px]" style={{ color: "#2a3050" }}>CoinGecko · alternative.me</div>
+          <div className="text-[9px]" style={{ color: "#2a3050" }}>CoinAstra market feeds</div>
         </div>
       </div>
     </div>

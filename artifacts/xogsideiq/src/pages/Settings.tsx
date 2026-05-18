@@ -201,7 +201,7 @@ export default function Settings() {
                 <h2 className="text-[14px] font-black text-white mb-4">API Keys</h2>
                 <div className="space-y-4">
                   {[
-                    { label: "CoinGecko API Key", desc: "For higher rate limits on market data", key: "CG-xxxx-xxxx-xxxx-xxxx", status: "Free Tier", color: "#f7931a" },
+                    { label: "Market Data API Key", desc: "For higher rate limits on market data", key: "MD-xxxx-xxxx-xxxx-xxxx", status: "Free Tier", color: "#f7931a" },
                     { label: "Etherscan API Key", desc: "For on-chain Ethereum analytics", key: "ETHERSCAN-xxxx-xxxx", status: "Not Set", color: "#5a6072" },
                     { label: "Nansen API Key", desc: "For smart money wallet data", key: "", status: "Pro Required", color: "#7c3aed" },
                     { label: "OpenAI API Key", desc: "For extended AI analysis features", key: "", status: "Not Set", color: "#5a6072" },

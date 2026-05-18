@@ -96,7 +96,7 @@ async function revalidate<T>(
   }
 }
 
-/** Standard TTL presets aligned with backend CoinGecko cache */
+/** Standard TTL presets aligned with backend market-data cache */
 export const API_CACHE = {
   prices: { freshMs: 30_000, staleMs: 120_000, timeoutMs: 5_000 } satisfies CachePolicy,
   markets: { freshMs: 30_000, staleMs: 120_000, timeoutMs: 5_000 } satisfies CachePolicy,

@@ -1,5 +1,5 @@
 /**
- * Map CoinGecko assets to TradingView symbols (EXCHANGE:PAIR).
+ * Map market assets to TradingView symbols (EXCHANGE:PAIR).
  * Fallback: BINANCE:{SYMBOL}USDT — users can pick another exchange in the TV toolbar.
  * localStorage caches last-opened symbol per coin for faster revisits.
  */
@@ -84,7 +84,7 @@ function fallbackPair(symbolUpper: string): string {
   return `BINANCE:${s}USDT`;
 }
 
-/** Resolve TradingView symbol for a CoinGecko id + ticker. */
+/** Resolve TradingView symbol for an asset id + ticker. */
 export function resolveTradingViewSymbol(coinId: string | undefined, symbolUpper: string): string {
   const id = coinId?.toLowerCase().trim();
   const sym = symbolUpper.toUpperCase().trim();
