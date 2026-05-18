@@ -688,6 +688,190 @@ function HoldersSection() {
   );
 }
 
+// ── CMC-Style Price Header ─────────────────────────────────────────────────────
+
+function CmcPriceHeader({ live, symbol, isFetchingLive }: { live: CoinLiveData | undefined; symbol: string; isFetchingLive: boolean }) {
+  const price = live?.price;
+  const ch24 = live?.priceChange24h ?? 0;
+  const high24 = live?.high24h;
+  const low24 = live?.low24h;
+  const ath = live?.ath;
+  const atl = live?.atl;
+  const isUp = ch24 >= 0;
+
+  const rangePos =
+    high24 != null && low24 != null && high24 !== low24 && price != null
+      ? Math.min(100, Math.max(0, ((price - low24) / (high24 - low24)) * 100))
+      : null;
+
+  const athPos =
+    ath != null && atl != null && ath !== atl && price != null && ath > 0
+      ? Math.min(100, Math.max(0, ((price - atl) / (ath - atl)) * 100))
+      : null;
+
+  const supplyPct =
+    live?.circulatingSupply && live?.maxSupply && live.maxSupply > 0
+      ? Math.min(100, (live.circulatingSupply / live.maxSupply) * 100)
+      : null;
+
+  return (
+    <div className="rounded-2xl p-5 mb-4" style={{ background: "rgba(10,14,22,0.92)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16 }}>
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
+        <div className="flex items-center gap-3">
+          {live?.image && (
+            <img src={live.image} alt={live.name ?? symbol} className="w-10 h-10 rounded-full shrink-0"
+              style={{ boxShadow: "0 0 12px rgba(0,0,0,0.5)" }} />
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[16px] font-black text-white">{live?.name ?? symbol}</span>
+              <span className="text-[11px] font-semibold uppercase px-1.5 py-0.5 rounded-md"
+                style={{ background: "rgba(255,255,255,0.06)", color: "#5a6072" }}>{symbol}</span>
+              {live?.rank && (
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md"
+                  style={{ background: "rgba(41,98,255,0.12)", color: "#4d7fff", border: "1px solid rgba(41,98,255,0.2)" }}>
+                  Rank #{live.rank}
+                </span>
+              )}
+            </div>
+            {live?.categories && live.categories.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {live.categories.slice(0, 3).map(c => (
+                  <span key={c} className="text-[9px] px-1.5 py-0.5 rounded-md font-semibold"
+                    style={{ background: "rgba(124,58,237,0.12)", color: "#9f7aea", border: "1px solid rgba(124,58,237,0.2)" }}>{c}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quick stats */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="text-right">
+            <div className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>Market Cap</div>
+            <div className="text-[13px] font-bold text-white font-mono">{fmtB(live?.marketCap)}</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>Volume 24h</div>
+            <div className="text-[13px] font-bold text-white font-mono">{fmtB(live?.volume24h)}</div>
+          </div>
+          {live?.fdv != null && live.fdv > 0 && (
+            <div className="text-right">
+              <div className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>FDV</div>
+              <div className="text-[13px] font-bold text-white font-mono">{fmtB(live.fdv)}</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Price row */}
+      <div className="flex items-end gap-3 mb-4 flex-wrap">
+        <div className="text-[36px] font-black text-white font-mono tabular-nums tracking-tight leading-none">
+          {isFetchingLive && !price ? (
+            <div className="h-9 w-48 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.08)" }} />
+          ) : (
+            fmtP(price)
+          )}
+        </div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[13px] font-black"
+            style={{
+              background: isUp ? "rgba(38,166,154,0.15)" : "rgba(239,83,80,0.15)",
+              color: isUp ? "#26a69a" : "#ef5350",
+              border: `1px solid ${isUp ? "rgba(38,166,154,0.25)" : "rgba(239,83,80,0.25)"}`,
+            }}>
+            {isUp ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
+            {Math.abs(ch24).toFixed(2)}%
+          </span>
+          <span className="text-[10px]" style={{ color: "#4a5068" }}>24h change</span>
+          {live?.priceChange7d != null && (
+            <span className="flex items-center gap-0.5 px-2 py-0.5 rounded-lg text-[11px] font-bold"
+              style={{
+                background: live.priceChange7d >= 0 ? "rgba(38,166,154,0.08)" : "rgba(239,83,80,0.08)",
+                color: live.priceChange7d >= 0 ? "#26a69a" : "#ef5350",
+              }}>
+              {live.priceChange7d >= 0 ? "+" : ""}{live.priceChange7d.toFixed(2)}% 7d
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* 24h Price Range Bar */}
+      {high24 != null && low24 != null && (
+        <div className="mb-3">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>24h Range</span>
+            <div className="flex items-center gap-2 text-[10px] font-mono">
+              <span style={{ color: "#ef5350" }}>{fmtP(low24)}</span>
+              <span style={{ color: "#3a4058" }}>—</span>
+              <span style={{ color: "#26a69a" }}>{fmtP(high24)}</span>
+            </div>
+          </div>
+          <div className="relative h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.07)" }}>
+            <div className="absolute h-full rounded-full"
+              style={{ width: `${Math.max(2, Math.min(98, rangePos ?? 50))}%`,
+                background: "linear-gradient(90deg, #ef5350, #f7931a 50%, #26a69a)" }} />
+            <div className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-white shadow-lg"
+              style={{ left: `${Math.max(2, Math.min(96, rangePos ?? 50))}%`,
+                transform: "translate(-50%, -50%)", background: "#fff",
+                boxShadow: "0 0 6px rgba(255,255,255,0.4)" }} />
+          </div>
+        </div>
+      )}
+
+      {/* ATH / ATL Range Bar */}
+      {ath != null && ath > 0 && atl != null && atl > 0 && (
+        <div className="mb-3">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>All-Time Range</span>
+            <div className="flex items-center gap-2 text-[9px] font-mono">
+              <span style={{ color: "#4a5068" }}>ATL: {fmtP(atl)}</span>
+              <span style={{ color: "#3a4058" }}>→</span>
+              <span style={{ color: "#4a5068" }}>ATH: {fmtP(ath)}</span>
+              {live?.athChange != null && (
+                <span style={{ color: "#ef5350" }}>({fmtPct(live.athChange)} from ATH)</span>
+              )}
+            </div>
+          </div>
+          <div className="relative h-1 rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+            <div className="absolute h-full rounded-full"
+              style={{ width: `${Math.max(1, Math.min(99, athPos ?? 50))}%`,
+                background: "linear-gradient(90deg, #ef5350, #f7931a, #2962ff, #26a69a)" }} />
+          </div>
+          <div className="flex justify-between text-[8px] mt-1 font-mono" style={{ color: "#3a4058" }}>
+            <span>ATL</span>
+            <span>ATH</span>
+          </div>
+        </div>
+      )}
+
+      {/* Circulating Supply Bar */}
+      {supplyPct != null && live?.circulatingSupply && (
+        <div>
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-[9px] uppercase tracking-wider font-semibold" style={{ color: "#4a5068" }}>Circulating Supply</span>
+            <div className="flex items-center gap-2 text-[9px] font-mono">
+              <span className="text-white">{supplyPct.toFixed(1)}%</span>
+              <span style={{ color: "#4a5068" }}>
+                {live.circulatingSupply >= 1e9
+                  ? `${(live.circulatingSupply / 1e9).toFixed(2)}B`
+                  : `${(live.circulatingSupply / 1e6).toFixed(2)}M`} {symbol}
+                {live.maxSupply ? ` / ${live.maxSupply >= 1e9 ? `${(live.maxSupply / 1e9).toFixed(2)}B` : `${(live.maxSupply / 1e6).toFixed(2)}M`} max` : ""}
+              </span>
+            </div>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.07)" }}>
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${supplyPct}%`,
+                background: supplyPct > 80 ? "#26a69a" : supplyPct > 50 ? "#2962ff" : "#f7931a" }} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 export default function TokenDetail() {
@@ -750,6 +934,7 @@ export default function TokenDetail() {
       {metaLoading && !live ? (
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_400px] gap-4">
           <div className="space-y-4">
+            <Skeleton className="h-40 w-full rounded-2xl animate-pulse" />
             <Skeleton className="h-10 w-full rounded-2xl animate-pulse" />
             <Skeleton className="h-[400px] w-full rounded-2xl animate-pulse" />
             <Skeleton className="h-64 w-full rounded-2xl animate-pulse" />
@@ -759,6 +944,7 @@ export default function TokenDetail() {
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_400px] gap-4 items-start">
           <div className="space-y-4 min-w-0">
+            <CmcPriceHeader live={live} symbol={symbol} isFetchingLive={isFetchingLive} />
             <WorkspaceNav />
             <TradingViewCoinChart
               coinId={cid}

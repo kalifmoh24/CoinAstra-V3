@@ -71,6 +71,8 @@ const CATEGORY_MAP: Record<string, string | null> = {
   "All":           null,
   "Trending":      "__trending__",
   "New Listings":  "__new__",
+  "Gainers":       "__gainers__",
+  "Losers":        "__losers__",
   "DeFi":          "decentralized-finance-defi",
   "Layer 1":       "layer-1",
   "Layer 2":       "layer-2",
@@ -518,7 +520,7 @@ function TabletSkelRow({ i }: { i:number }) {
 function DeskSkelRow({ i }: { i:number }) {
   return (
     <tr className="animate-pulse border-b" style={{ borderColor:"rgba(255,255,255,0.04)", animationDelay:`${i*35}ms` }}>
-      {[12,10,150,90,60,65,65,100,100,130,80].map((w,j) => (
+      {[12,10,150,90,60,65,65,100,100,100,130,80].map((w,j) => (
         <td key={j} className="px-3 py-3.5">
           <div className="h-3 rounded-md" style={{ width:w, background:"rgba(255,255,255,0.06)" }} />
         </td>
@@ -574,7 +576,9 @@ export default function Markets() {
   const activeCategoryId = CATEGORY_MAP[category] ?? null;
   const isTrendingMode = activeCategoryId === "__trending__";
   const isNewListingsMode = activeCategoryId === "__new__";
-  const isCategoryMode = activeCategoryId !== null && !isTrendingMode && !isNewListingsMode;
+  const isGainersMode = activeCategoryId === "__gainers__";
+  const isLosersMode = activeCategoryId === "__losers__";
+  const isCategoryMode = activeCategoryId !== null && !isTrendingMode && !isNewListingsMode && !isGainersMode && !isLosersMode;
   const optimizedAll = !activeCategoryId && category === "All";
 
   const {
@@ -621,6 +625,23 @@ export default function Markets() {
     retry: 1,
   });
 
+  const { data: moversCoins, isLoading: moversLoading } = useQuery({
+    queryKey: ["cg-movers", isGainersMode ? "gainers" : "losers"],
+    queryFn: async (): Promise<CoinMarket[]> => {
+      const r = await fetch(`/api/coins/markets?per_page=250&page=1&sparkline=true&price_change_percentage=1h,7d`);
+      if (!r.ok) throw new Error(`movers ${r.status}`);
+      const data: CoinMarket[] = await r.json();
+      return data.sort((a, b) =>
+        isGainersMode
+          ? b.price_change_percentage_24h - a.price_change_percentage_24h
+          : a.price_change_percentage_24h - b.price_change_percentage_24h
+      );
+    },
+    enabled: isGainersMode || isLosersMode,
+    staleTime: 60_000,
+    retry: 1,
+  });
+
   const isSearchMode = debouncedSearch.length >= 1 && !optimizedAll;
   const { data: liveSearchData, isFetching: searchFetching } = useQuery({
     queryKey: ["cg-search-markets", debouncedSearch],
@@ -655,11 +676,13 @@ export default function Markets() {
     ? (trendingCoins ?? [])
     : isNewListingsMode
       ? (newListingCoins ?? [])
-      : isCategoryMode
-        ? (categoryCoins ?? [])
-        : optimizedAll
-          ? (opt.rows as CoinMarket[])
-          : (coins ?? []);
+      : isGainersMode || isLosersMode
+        ? (moversCoins ?? [])
+        : isCategoryMode
+          ? (categoryCoins ?? [])
+          : optimizedAll
+            ? (opt.rows as CoinMarket[])
+            : (coins ?? []);
 
   const tickAt = optimizedAll ? opt.priceUpdatedAt : dataUpdatedAt;
 
@@ -670,7 +693,8 @@ export default function Markets() {
     isLoading ||
     categoryLoading ||
     trendingLoading ||
-    newListingsLoading;
+    newListingsLoading ||
+    moversLoading;
 
   const refetchMarketsList = useCallback(() => {
     if (optimizedAll) opt.refetchPrices();
@@ -738,7 +762,9 @@ export default function Markets() {
       ? trendingLoading && baseCoins.length === 0
       : isNewListingsMode
         ? newListingsLoading && baseCoins.length === 0
-        : isLoading || (isCategoryMode && categoryLoading);
+        : isGainersMode || isLosersMode
+          ? moversLoading && baseCoins.length === 0
+          : isLoading || (isCategoryMode && categoryLoading);
 
   const marketsListError = optimizedAll
     ? opt.isError
@@ -1490,7 +1516,7 @@ export default function Markets() {
               style={{ background:"rgba(10,14,22,0.75)", backdropFilter:"blur(24px)",
                 border:"1px solid rgba(255,255,255,0.05)", boxShadow:"0 24px 80px rgba(0,0,0,0.5)" }}>
               <div className="overflow-x-auto">
-                <table className="w-full" style={{ minWidth:960 }}>
+                <table className="w-full" style={{ minWidth:1080 }}>
                   <thead style={{ background:"rgba(8,12,22,0.95)", position:"sticky", top:0, zIndex:20,
                     borderBottom:"1px solid rgba(255,255,255,0.06)", backdropFilter:"blur(20px)" }}>
                     <tr>
@@ -1503,6 +1529,7 @@ export default function Markets() {
                       <SortTH label="7d %" sk="ch7d" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} right />
                       <SortTH label="Market Cap" sk="mcap" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} right />
                       <SortTH label="Volume 24h" sk="vol" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} right />
+                      <SortTH label="FDV" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} right />
                       <SortTH label="Circulating Supply" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} right />
                       <SortTH label="7 Days" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} right />
                     </tr>
@@ -1533,7 +1560,7 @@ export default function Markets() {
                                     </div>
                                   </div>
                                 </td>
-                                <td colSpan={8} className="px-3 py-3.5 text-right text-[11px]" style={{ color:"#4a5068" }}>
+                                <td colSpan={9} className="px-3 py-3.5 text-right text-[11px]" style={{ color:"#4a5068" }}>
                                   Click to view full chart →
                                 </td>
                               </motion.tr>
@@ -1584,6 +1611,9 @@ export default function Markets() {
                                 <td className="px-3 py-3.5 text-right">
                                   <div className="text-[11px] font-mono text-[#d1d4dc] tabular-nums">{fmtLarge(coin.total_volume)}</div>
                                   {coin.market_cap>0 && <div className="text-[8px] mt-0.5" style={{ color:"#5a6072" }}>{((coin.total_volume/coin.market_cap)*100).toFixed(1)}% of cap</div>}
+                                </td>
+                                <td className="px-3 py-3.5 text-right text-[11px] font-mono text-[#d1d4dc] tabular-nums">
+                                  {coin.fully_diluted_valuation ? fmtLarge(coin.fully_diluted_valuation) : <span style={{ color:"#3a4058" }}>—</span>}
                                 </td>
                                 <td className="px-3 py-3.5 text-right" style={{ minWidth:130 }}>
                                   <div className="text-[10px] font-mono text-[#d1d4dc] tabular-nums">{fmtSupply(coin.circulating_supply,coin.symbol)}</div>

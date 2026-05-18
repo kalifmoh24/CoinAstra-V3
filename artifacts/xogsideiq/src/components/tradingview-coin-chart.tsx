@@ -215,16 +215,16 @@ export function TradingViewCoinChart({ coinId, symbol, live, onChartRevalidate }
           </div>
         </div>
 
-        <ChartTimeframeBar<TvStyleMode, string>
+        <ChartTimeframeBar
           modes={[
             { id: "candles", label: "Candles" },
             { id: "line", label: "Line" },
           ]}
           activeMode={styleMode}
-          onModeChange={setStyleMode}
+          onModeChange={(m) => setStyleMode(m as TvStyleMode)}
           timeframes={TV_TIMEFRAMES}
           activeTf={interval}
-          onTfChange={setInterval}
+          onTfChange={(tf) => setInterval(tf as string)}
         />
 
         <div className="flex flex-wrap items-center gap-2 text-[10px]" style={{ color: "#6b7389" }}>

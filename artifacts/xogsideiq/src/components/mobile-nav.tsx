@@ -4,13 +4,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, BarChart2, Brain, Star, Briefcase, Bell, Globe } from "lucide-react";
 
 const TABS = [
-  { path: "/",           icon: LayoutDashboard, label: "Home",     color: "#2962ff" },
-  { path: "/markets",    icon: BarChart2,        label: "Markets",  color: "#26a69a" },
-  { path: "/discover",   icon: Globe,            label: "Discover", color: "#4d7fff" },
-  { path: "/ai-insights",icon: Brain,            label: "AI",       color: "#7c3aed" },
-  { path: "/watchlist",  icon: Star,             label: "Watch",    color: "#f7931a" },
-  { path: "/portfolio",  icon: Briefcase,        label: "Portfolio",color: "#26a69a" },
-  { path: "/alerts",     icon: Bell,             label: "Alerts",   color: "#ef5350" },
+  { path: "/",           icon: LayoutDashboard, label: "Home",     color: "#2962ff",  badge: null },
+  { path: "/markets",    icon: BarChart2,        label: "Markets",  color: "#26a69a",  badge: "live" },
+  { path: "/discover",   icon: Globe,            label: "Discover", color: "#4d7fff",  badge: null },
+  { path: "/ai-insights",icon: Brain,            label: "AI",       color: "#7c3aed",  badge: null },
+  { path: "/watchlist",  icon: Star,             label: "Watch",    color: "#f7931a",  badge: null },
+  { path: "/portfolio",  icon: Briefcase,        label: "Portfolio",color: "#26a69a",  badge: null },
+  { path: "/alerts",     icon: Bell,             label: "Alerts",   color: "#ef5350",  badge: "alert" },
 ];
 
 export function MobileNav() {
@@ -54,8 +54,12 @@ export function MobileNav() {
                         transition={{ type: "spring", stiffness: 500, damping: 34 }}
                       />
                     )}
+                    {/* Live dot for Markets */}
+                    {tab.badge === "live" && (
+                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-[rgba(5,8,16,0.9)] z-20 animate-pulse" style={{ background: "#26a69a" }} />
+                    )}
                     {/* Notification dot for Alerts */}
-                    {tab.label === "Alerts" && (
+                    {tab.badge === "alert" && (
                       <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#ef5350] border border-[rgba(5,8,16,0.9)] z-20 animate-pulse" />
                     )}
                     <motion.div
