@@ -151,6 +151,7 @@ function TradingViewMount({
     el.innerHTML = "";
     const wrap = document.createElement("div");
     wrap.className = "tradingview-widget-container__widget w-full";
+    wrap.style.height = `${height}px`;
     wrap.style.minHeight = `${height}px`;
     el.appendChild(wrap);
 
@@ -206,7 +207,7 @@ function TradingViewMount({
     <div
       ref={rootRef}
       className="w-full tradingview-widget-container"
-      style={{ minHeight: height }}
+      style={{ height, minHeight: height }}
     />
   );
 }
@@ -261,8 +262,8 @@ export function TradingViewCoinChart({
   const chartHeight =
     typeof window !== "undefined" &&
     window.matchMedia?.("(min-width: 1024px)").matches
-      ? 620
-      : 500;
+      ? 840
+      : 640;
 
   const waitingId = !coinId?.trim();
   const metricTiles = useMemo(
@@ -508,6 +509,7 @@ export function TradingViewCoinChart({
           ref={wrapRef}
           className="relative w-full min-w-0 overflow-hidden rounded-[22px]"
           style={{
+            height: chartHeight,
             minHeight: chartHeight,
             background: "#060a12",
             border: "1px solid rgba(120,143,205,0.18)",
