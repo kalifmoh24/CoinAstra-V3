@@ -1,7 +1,8 @@
 import express, { type Express } from "express";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import cors from "cors";
-import { pinoHttp } from "pino-http";
+import * as pinoHttpModule from "pino-http";
+import type { HttpLogger, Options as PinoHttpOptions } from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { corsOptions } from "./config/cors";
@@ -9,11 +10,13 @@ import { globalLimiter } from "./middleware/rateLimiter";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 
 const app: Express = express();
+const createHttpLogger: (opts?: PinoHttpOptions<IncomingMessage, ServerResponse>) => HttpLogger =
+  pinoHttpModule.pinoHttp;
 
 app.set("trust proxy", 1);
 
 app.use(
-  pinoHttp({
+  createHttpLogger({
     logger,
     serializers: {
       req(req: IncomingMessage & { id?: unknown }) {
